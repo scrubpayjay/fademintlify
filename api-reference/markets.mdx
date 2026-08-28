@@ -1,0 +1,96 @@
+---
+title: "GET /markets — Market Identifiers and Classification"
+sidebarTitle: "GET /markets"
+description: "List markets with Sportshack UUIDs, sport and family classification, contract rules hash, and official venue URL — no prices or lifecycle state included."
+---
+
+The `/markets` endpoint returns the universe of markets Sportshack has classified and tracks for forecasting. Each record gives you the stable Sportshack `market_id` UUID, the venue the market lives on, the venue's own identifier for the contract (`venue_market_id`), Sportshack's sport and prediction family labels, the series the market belongs to, a `contract_rules_hash` fingerprinting the contract definition, and the `official_venue_url` pointing to the market on the originating venue. The response does **not** include venue titles, market lifecycle state, prices, or order book data — those fields fall outside the analytical license boundary. Use this endpoint to build your internal market catalog and to resolve `market_id` values you encounter on Forecast or Grade objects.
+
+<Note>
+  Market records contain identifiers and classification metadata only. Venue pricing, bid/ask data, market open/close state, and settlement text are not present in any field and are not available through the Quant Partner API.
+</Note>
+
+## Query Parameters
+
+<ParamField query="sport" type="string" optional>
+  Filter results to markets belonging to a specific sport, for example `"nfl"` or `"nba"`. Values are lowercase and match the `sport` field on Market objects. Omit to return markets across all sports available under your key.
+</ParamField>
+
+<ParamField query="family" type="string" optional>
+  Filter results to a specific prediction family, for example `"nfl_spreads"` or `"nba_totals"`. Values match the `family` field on Market objects and the `families` array returned by `/manifest`. Omit to return markets across all families.
+</ParamField>
+
+<ParamField query="limit" type="integer" optional>
+  Number of records to return per page. Accepts integers from `1` to `200`. Defaults to `50`.
+</ParamField>
+
+<ParamField query="cursor" type="string" optional>
+  Opaque pagination cursor returned in the `next_cursor` field of a previous response. Pass this value to retrieve the next page. Omit on the first request.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="api_version" type="string">
+  Always `"1"`.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Array of Market objects matching the query. Returns an empty array if no markets match.
+
+  <Expandable title="Market object fields">
+    <ResponseField name="market_id" type="string (uuid)">
+      Sportshack's stable UUID for this market. Use this value when looking up a specific market or joining to Forecast and Grade records.
+    </ResponseField>
+    <ResponseField name="venue" type="string">
+      The prediction venue (exchange or platform) where this market originates, for example `"kalshi"` or `"polymarket"`.
+    </ResponseField>
+    <ResponseField name="venue_market_id" type="string">
+      The venue's own identifier for this contract. Format varies by venue; treat as an opaque string.
+    </ResponseField>
+    <ResponseField name="event_ticker" type="string | null">
+      The event grouping identifier used by the venue, if applicable. `null` for venues that do not expose an event layer.
+    </ResponseField>
+    <ResponseField name="sport" type="string | null">
+      Sportshack-assigned sport label, for example `"nfl"` or `"nba"`. `null` for markets Sportshack has not yet classified.
+    </ResponseField>
+    <ResponseField name="family" type="string | null">
+      Sportshack prediction family label, for example `"nfl_spreads"`. `null` for unclassified markets.
+    </ResponseField>
+    <ResponseField name="series" type="string">
+      The contract series this market belongs to. Used to group related markets within a family.
+    </ResponseField>
+    <ResponseField name="contract_rules_hash" type="string | null">
+      SHA-256 fingerprint of the contract definition text at the time Sportshack last captured it. Use this to detect contract rule changes across snapshots. `null` if the rules text has not been captured.
+    </ResponseField>
+    <ResponseField name="official_venue_url" type="string | null">
+      Direct URL to this market on the originating venue's website. Provided for reference only. `null` if not available.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string | null">
+  Opaque cursor for the next page of results. `null` when you have reached the last page.
+</ResponseField>
+
+## Examples
+
+**List all markets (no filters):**
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/markets" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+**Filter by sport and family:**
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/markets?sport=nfl&family=nfl_spreads&limit=100" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+**Paginate through results:**
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/markets?cursor=eyJpZCI6IjEyMyJ9" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```

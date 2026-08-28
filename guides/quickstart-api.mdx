@@ -1,0 +1,205 @@
+---
+title: "Make Your First Fade API Call in 5 Minutes"
+sidebarTitle: "API Quickstart"
+description: "Go from API key to live forecast data in minutes. Follow these six steps to authenticate, explore the manifest, and retrieve graded outcomes."
+---
+
+The Fade Quant Partner API gives you programmatic access to Fade's probability forecasts, provenance data, and grading outcomes. This guide walks you through every step — from setting your credentials to following pagination — using nothing but `curl` so you can verify the flow before integrating with your preferred language or framework.
+
+<Steps>
+
+  <Step title="Set your API key as an environment variable">
+    Store your API key in a shell variable so you don't have to paste it into every command. Replace `fade_live_...` with the key from your Fade dashboard.
+
+    ```bash
+    export FADE_API_KEY=fade_live_...
+    ```
+
+    <Warning>
+      Never hard-code your API key in source files or commit it to version control. Use environment variables or a secrets manager in production.
+    </Warning>
+  </Step>
+
+  <Step title="Check the manifest">
+    The manifest endpoint returns the API version, the data families available to your key, and other account-level metadata. It's the fastest way to confirm your credentials are valid and to discover which proposition families you have access to.
+
+    ```bash
+    curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+      https://fade.sportshack.ai/api/v1/manifest
+    ```
+
+    A successful response looks like this:
+
+    ```json
+    {
+      "api_version": "1.0",
+      "plan": "quant_partner",
+      "families": [
+        {
+          "family": "pitcher_strikeouts",
+          "sport": "baseball",
+          "description": "Strikeout totals for starting and relief pitchers",
+          "active": true
+        },
+        {
+          "family": "batter_hits",
+          "sport": "baseball",
+          "description": "Hit totals for individual batters",
+          "active": true
+        },
+        {
+          "family": "player_points",
+          "sport": "basketball",
+          "description": "Points scored by individual players",
+          "active": true
+        }
+      ],
+      "timestamps": {
+        "generated_at": "2025-01-15T18:42:00Z"
+      }
+    }
+    ```
+
+    <Tip>
+      Keep note of the `family` values returned here — you'll use them as filter parameters in the next steps.
+    </Tip>
+  </Step>
+
+  <Step title="Fetch current forecasts">
+    The `/forecasts` endpoint returns the currently issued forecasts. Use the `family` parameter to scope your request to one proposition type, and `limit` to control page size (maximum 200).
+
+    ```bash
+    curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+      "https://fade.sportshack.ai/api/v1/forecasts?family=pitcher_strikeouts&limit=50"
+    ```
+
+    The response includes a `data` array of forecast objects and a `next_cursor` for pagination:
+
+    ```json
+    {
+      "api_version": "1.0",
+      "data": [
+        {
+          "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w1",
+          "family": "pitcher_strikeouts",
+          "sport": "baseball",
+          "player_name": "Gerrit Cole",
+          "team": "NYY",
+          "opponent": "BOS",
+          "game_date": "2025-01-15",
+          "line": 6.5,
+          "probability": 0.61,
+          "direction": "over",
+          "issued_at": "2025-01-15T12:00:00Z",
+          "status": "pending"
+        },
+        {
+          "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w2",
+          "family": "pitcher_strikeouts",
+          "sport": "baseball",
+          "player_name": "Dylan Cease",
+          "team": "SDP",
+          "opponent": "LAD",
+          "game_date": "2025-01-15",
+          "line": 7.5,
+          "probability": 0.58,
+          "direction": "over",
+          "issued_at": "2025-01-15T12:05:00Z",
+          "status": "pending"
+        }
+      ],
+      "next_cursor": "eyJvZmZzZXQiOjUwfQ==",
+      "total_returned": 50
+    }
+    ```
+
+    All timestamps are UTC ISO-8601.
+  </Step>
+
+  <Step title="Retrieve a single forecast with provenance">
+    Pass a `forecast_id` as a path parameter to retrieve the full detail for one forecast, including provenance metadata and contract evidence that explains how the probability was derived.
+
+    ```bash
+    curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+      "https://fade.sportshack.ai/api/v1/forecasts/fcst_01j8xkz3p4q5r6s7t8u9v0w1"
+    ```
+
+    The single-forecast response includes all fields from the list plus a `provenance` block and contract-level evidence:
+
+    ```json
+    {
+      "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w1",
+      "family": "pitcher_strikeouts",
+      "player_name": "Gerrit Cole",
+      "line": 6.5,
+      "probability": 0.61,
+      "direction": "over",
+      "provenance": {
+        "model_version": "v3.2.1",
+        "feature_snapshot_at": "2025-01-15T11:55:00Z",
+        "contracts_used": 4
+      },
+      "evidence": [
+        {
+          "contract_id": "ctr_abc123",
+          "type": "recent_performance",
+          "weight": 0.42,
+          "summary": "Cole has exceeded 6.5 K in 7 of last 10 starts vs. right-handed lineups"
+        }
+      ]
+    }
+    ```
+  </Step>
+
+  <Step title="Check grading outcomes">
+    After games complete, Fade grades each forecast. Query `/grades` to see resolved outcomes. Filter by `status=graded` to retrieve only forecasts with final results.
+
+    ```bash
+    curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+      "https://fade.sportshack.ai/api/v1/grades?status=graded"
+    ```
+
+    Each grade record contains an `outcome` field: `1` means the forecast resolved YES (win), `0` means it resolved NO (miss). Misses are always included — the API never filters them out.
+
+    ```json
+    {
+      "api_version": "1.0",
+      "data": [
+        {
+          "grade_id": "grd_01j8xkz9a1b2c3d4e5f6g7h8",
+          "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w1",
+          "family": "pitcher_strikeouts",
+          "outcome": 1,
+          "actual_value": 7,
+          "line": 6.5,
+          "direction": "over",
+          "graded_at": "2025-01-15T23:10:00Z",
+          "status": "graded"
+        }
+      ],
+      "next_cursor": null,
+      "total_returned": 1
+    }
+    ```
+
+    <Note>
+      Grades with `status=void` or `status=unavailable` represent forecasts that could not be resolved (for example, a cancelled game). Exclude these from any win-rate calculations.
+    </Note>
+  </Step>
+
+  <Step title="Follow pagination to get more results">
+    When a response includes a non-null `next_cursor`, pass it as the `cursor` query parameter to retrieve the next page. Repeat until `next_cursor` is `null`.
+
+    ```bash
+    curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+      "https://fade.sportshack.ai/api/v1/forecasts?cursor=eyJvZmZzZXQiOjUwfQ=="
+    ```
+
+    Cursors are opaque strings — do not decode or construct them manually. Always copy the exact value from the previous response's `next_cursor` field.
+
+    <Tip>
+      Once you've verified the full flow with `curl`, move to Python, JavaScript, or any HTTP client. Wrap the pagination loop in a helper that keeps fetching until `next_cursor` is `null`, collecting all pages into a single list. For large one-time exports, see the [Bulk Export](/guides/bulk-export) guide which avoids pagination entirely.
+    </Tip>
+  </Step>
+
+</Steps>

@@ -1,0 +1,135 @@
+---
+title: "Track Forecast Outcomes and Build a Graded Record"
+sidebarTitle: "Tracking Grades"
+description: "Use GET /api/v1/grades to retrieve resolved outcomes, understand the grading lifecycle, and join grades to forecasts for a full performance record."
+---
+
+Every forecast Fade issues eventually moves through a grading lifecycle — from issued to resolved or voided. The `/grades` endpoint gives you access to those outcomes so you can measure model performance, track your own results, and build a historical record. This guide explains the lifecycle, the outcome field, and how to join grades back to the original forecasts.
+
+## The grading lifecycle
+
+When a forecast is first issued it carries a status of `pending`. Once the underlying game completes and results are confirmed, Fade resolves the forecast to one of three terminal states:
+
+| Status | Meaning |
+|--------|---------|
+| `graded` | The forecast resolved with a definitive outcome — either a win or a miss |
+| `void` | The event was cancelled, postponed, or otherwise invalidated before it could be graded |
+| `unavailable` | Grading data could not be obtained in time or a data-integrity issue prevented resolution |
+
+The `outcome` field appears only on `graded` records:
+
+- **`1`** — the forecast resolved YES (the predicted direction hit)
+- **`0`** — the forecast resolved NO (miss)
+
+Misses are always included in the response. Fade never filters out losing forecasts, so the data you receive is a complete, unbiased record of model performance.
+
+<Note>
+  Exclude `void` and `unavailable` grades from any win-rate or ROI calculations. These records represent forecasts that could not be fairly evaluated — for example, a game that was rained out — and including them would distort your metrics.
+</Note>
+
+## Fetch all graded outcomes
+
+Filter by `status=graded` to retrieve only forecasts that have a final outcome. This is the most common starting point for performance analysis.
+
+```bash
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/grades?status=graded"
+```
+
+A typical response looks like this:
+
+```json
+{
+  "api_version": "1.0",
+  "data": [
+    {
+      "grade_id": "grd_01j8xkz9a1b2c3d4e5f6g7h8",
+      "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w1",
+      "family": "pitcher_strikeouts",
+      "sport": "baseball",
+      "player_name": "Gerrit Cole",
+      "line": 6.5,
+      "direction": "over",
+      "actual_value": 7,
+      "outcome": 1,
+      "game_date": "2025-01-15",
+      "graded_at": "2025-01-15T23:10:00Z",
+      "status": "graded"
+    },
+    {
+      "grade_id": "grd_01j8xkz9a1b2c3d4e5f6g7h9",
+      "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w2",
+      "family": "pitcher_strikeouts",
+      "sport": "baseball",
+      "player_name": "Dylan Cease",
+      "line": 7.5,
+      "direction": "over",
+      "actual_value": 5,
+      "outcome": 0,
+      "game_date": "2025-01-15",
+      "graded_at": "2025-01-15T23:45:00Z",
+      "status": "graded"
+    }
+  ],
+  "next_cursor": "eyJvZmZzZXQiOjI1fQ==",
+  "total_returned": 2
+}
+```
+
+## Filter by family and date
+
+Narrow your grades request to a specific proposition type and game date using the `family` and `date` parameters. Both filters can be combined with any `status` value.
+
+```bash
+# Grades for pitcher_strikeouts on a specific date
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/grades?status=graded&family=pitcher_strikeouts&date=2025-01-15"
+```
+
+Available query parameters for `/grades`:
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `status` | `pending` \| `graded` \| `void` \| `unavailable` | Filter by grade lifecycle status |
+| `family` | string | Filter to a single proposition family |
+| `sport` | string | Filter to a single sport |
+| `date` | `YYYY-MM-DD` | Filter to a UTC game date |
+| `limit` | integer ≤ 200 | Number of records per page |
+| `cursor` | string | Pagination cursor from previous response |
+
+## Paginate through a large grades response
+
+When a grades response includes a non-null `next_cursor`, pass it as the `cursor` parameter to retrieve the next page. Continue until `next_cursor` is `null`.
+
+```bash
+# First page
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/grades?status=graded&limit=200"
+
+# Subsequent pages — replace the cursor value with the one from the previous response
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/grades?status=graded&limit=200&cursor=eyJvZmZzZXQiOjIwMH0="
+```
+
+Always copy the cursor value exactly as returned — cursors are opaque and must not be decoded or constructed.
+
+## Join grades to forecasts
+
+Each grade record contains a `forecast_id` that maps directly to the `forecast_id` on the corresponding forecast. Use this key to join the two datasets and enrich your graded record with the full forecast detail — including probability, provenance, and contract evidence.
+
+```bash
+# Step 1: collect your graded records
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/grades?status=graded&family=pitcher_strikeouts" \
+  -o grades.json
+
+# Step 2: for each forecast_id in grades.json, fetch the full forecast
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/forecasts/fcst_01j8xkz3p4q5r6s7t8u9v0w1"
+```
+
+In practice, join the two datasets in code using `forecast_id` as the foreign key. This gives you a table where each row contains the original probability, the line, the direction, and the final `outcome` — everything you need to compute calibration metrics, Brier scores, or simple win rates.
+
+<Tip>
+  For pre-aggregated, per-family performance metrics — win rate, ROI, and calibration summaries computed by Fade — call `GET /api/v1/model-history`. This saves you from building your own aggregation pipeline when a high-level view is all you need.
+</Tip>

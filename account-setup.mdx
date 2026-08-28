@@ -1,0 +1,87 @@
+---
+title: "Create Your Sportshack Account and Access Fade"
+sidebarTitle: "Account Setup"
+description: "Set up a free Sportshack account for web access to the daily board, or complete the licensed onboarding flow to unlock the Quant Partner API."
+---
+
+Fade offers two distinct access paths depending on what you need. If you want to explore today's Reality Engine disagreements through the web interface, you can create a free Sportshack account and start immediately — no payment or license required. If you need programmatic access to forecast probabilities, provenance records, and grades, you'll go through the Quant Partner API onboarding flow, which is a licensed, reviewed process with dedicated key delivery. Both paths are described below.
+
+## Path 1 — Free Web Access (Daily Board)
+
+The Fade daily board at [fade.sportshack.ai](https://fade.sportshack.ai) is available to anyone with a free Sportshack account. The board surfaces today's model-vs-market Reality Engine disagreements across live sports (currently MLB and NFL), updated throughout the day as the model issues new forecasts.
+
+To get access:
+
+1. Go to [sportshack.ai/start?ref=fade](https://sportshack.ai/start?ref=fade).
+2. Create your free Sportshack account with your email address.
+3. Log in and navigate to [fade.sportshack.ai](https://fade.sportshack.ai) to view today's board.
+
+No credit card, no license agreement, and no approval process is required for web access.
+
+## Path 2 — Quant Partner API Access
+
+The Quant Partner API gives licensed customers read-only programmatic access to issued forecast probabilities, provenance metadata, and graded records. This path requires a license agreement, payment, and a manual fulfillment step performed by the Sportshack team.
+
+<Steps>
+  <Step title="Contact Sportshack">
+    Start the onboarding process by reaching out through the developer access page at [fade.sportshack.ai/developers/access](https://fade.sportshack.ai/developers/access). Describe your use case, team size, and intended integration. The Sportshack team will respond to confirm eligibility and provide a license agreement for your review.
+  </Step>
+  <Step title="Complete License Agreement and Payment">
+    Once the Sportshack team confirms your access request, you'll receive a license agreement and a payment link. Quant Partner API access is priced starting at:
+
+    - **$1,500 / month** for a monthly subscription
+    - **$5,000 / season** for a full-season license
+
+    Payment is processed via **Stripe Payment Link** or by **invoice**, depending on your organization's requirements. Contact the Sportshack team during onboarding to specify your preferred payment method.
+
+    <Note>
+      Completing payment does **not** automatically create or activate your API key. Sportshack manually reviews and fulfills every Quant Partner account before issuing credentials. Allow up to one business day after confirmed payment for fulfillment.
+    </Note>
+  </Step>
+  <Step title="Receive Your API Key">
+    Once Sportshack has reviewed your account and confirmed your license and payment, your API key is delivered through a secure channel communicated to you during onboarding. Keys are delivered exactly once and are **never stored in plaintext** by Sportshack after delivery.
+
+    Store your key securely — in a secrets manager, environment variable vault, or equivalent credential store. If your key is lost or compromised, contact Sportshack directly to initiate a rotation. There is no self-service key recovery.
+  </Step>
+</Steps>
+
+<Warning>
+  Do not embed your API key in client-side code, public repositories, or any location where it may be exposed. Your key grants read access to licensed forecast data — treat it with the same care as a private credential.
+</Warning>
+
+## Pricing Summary
+
+<CardGroup cols={2}>
+  <Card title="Monthly Access" icon="calendar">
+    **Starting at $1,500 / month**
+
+    Billed monthly. Suitable for ongoing research, live integrations, or organizations that need flexibility across seasons.
+  </Card>
+  <Card title="Season License" icon="trophy">
+    **Starting at $5,000 / season**
+
+    Billed once per season. Suited for teams running season-long back-testing or calibration projects with a defined scope.
+  </Card>
+</CardGroup>
+
+## Frequently Asked Questions
+
+<Accordion title="Can I access the API without signing a license agreement?">
+  No. The Quant Partner API requires a signed license agreement in addition to payment. The license governs permitted use of the data, attribution requirements, and redistribution restrictions. Sportshack reviews every account before issuing a key.
+</Accordion>
+
+<Accordion title="How long does onboarding take?">
+  The full onboarding process — from initial contact to key delivery — typically takes two to five business days, depending on how quickly the license agreement is returned and payment is confirmed. Allow up to one business day after confirmed payment for Sportshack to complete fulfillment and deliver your key.
+</Accordion>
+
+<Accordion title="What happens if my key is compromised?">
+  Contact the Sportshack team immediately via the developer access page at [fade.sportshack.ai/developers/access](https://fade.sportshack.ai/developers/access). There is no self-service key rotation. The team will revoke the compromised key and issue a replacement through the same secure delivery channel.
+</Accordion>
+
+<Accordion title="Is the free web account separate from the API license?">
+  Yes. Your free Sportshack account credentials (email and password) are used to access the daily board web app. The Quant Partner API uses a separate API key that is not tied to your web login. You can hold both simultaneously.
+</Accordion>
+
+<Note>
+  Fade is an analytics and research platform only. Sportshack does not facilitate wagering, hold funds, or process bets. All forecast data is for analytical purposes. Must be 21 or older to access sports-wagering markets in your jurisdiction.
+</Note>

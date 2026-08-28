@@ -1,0 +1,132 @@
+---
+title: "Export Forecasts and Grades in Bulk with the Download Endpoint"
+sidebarTitle: "Bulk Export"
+description: "Use GET /api/v1/download to pull large datasets as JSON or CSV. Apply family and date filters to stay within the 50,000-row hard cap."
+---
+
+The `/download` endpoint lets you export forecast and grade data in a single request without iterating through paginated pages. Use it when you need a full snapshot for analysis, model training, or archival — and apply the available filters to keep each request within Fade's hard row cap.
+
+## Endpoint
+
+```
+GET https://fade.sportshack.ai/api/v1/download
+```
+
+All requests require your bearer token in the `Authorization` header.
+
+## Parameters
+
+| Parameter | Required | Values | Description |
+|-----------|----------|--------|-------------|
+| `dataset` | Yes | `forecasts` \| `grades` | Which dataset to export |
+| `format` | No | `json` \| `csv` | Response format — defaults to `json` |
+| `family` | No | string | Filter to a single proposition family (e.g. `pitcher_strikeouts`) |
+| `date` | No | `YYYY-MM-DD` | Filter to a single UTC game date |
+
+## Row cap and 422 errors
+
+Every request is subject to a hard cap of **50,000 rows**. If your unfiltered result set exceeds this limit, the API returns a `422 Unprocessable Entity` error asking you to narrow the request with `family` or `date` filters. The API **never silently truncates** a result — you either receive the complete dataset or an explicit error.
+
+```json
+{
+  "error": "result_too_large",
+  "message": "This query would return more than 50,000 rows. Add a family or date filter to reduce the result size.",
+  "status": 422
+}
+```
+
+<Warning>
+  Do not assume a successful response contains all rows if you haven't verified the total count. Always add filters proactively when you know your dataset is large.
+</Warning>
+
+## Examples
+
+<CodeGroup>
+
+```bash Download all forecasts as JSON
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=forecasts"
+```
+
+```bash Download grades for a family as CSV
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=grades&family=pitcher_strikeouts&format=csv" \
+  -o pitcher_strikeouts_grades.csv
+```
+
+```bash Filter by game date
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=forecasts&date=2025-01-15"
+```
+
+```bash Combine family and date filters
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=grades&family=player_points&date=2025-01-15&format=csv" \
+  -o player_points_grades_2025-01-15.csv
+```
+
+</CodeGroup>
+
+## Response format
+
+<Tabs>
+  <Tab title="JSON">
+    The JSON response wraps the rows in a `data` array, consistent with the list endpoints:
+
+    ```json
+    {
+      "api_version": "1.0",
+      "dataset": "forecasts",
+      "total_rows": 312,
+      "data": [
+        {
+          "forecast_id": "fcst_01j8xkz3p4q5r6s7t8u9v0w1",
+          "family": "pitcher_strikeouts",
+          "sport": "baseball",
+          "player_name": "Gerrit Cole",
+          "team": "NYY",
+          "opponent": "BOS",
+          "game_date": "2025-01-15",
+          "line": 6.5,
+          "probability": 0.61,
+          "direction": "over",
+          "issued_at": "2025-01-15T12:00:00Z",
+          "status": "pending"
+        }
+      ]
+    }
+    ```
+  </Tab>
+  <Tab title="CSV">
+    The CSV response includes a header row followed by one row per record. Field names match those in the JSON format exactly:
+
+    ```csv
+    forecast_id,family,sport,player_name,team,opponent,game_date,line,probability,direction,issued_at,status
+    fcst_01j8xkz3p4q5r6s7t8u9v0w1,pitcher_strikeouts,baseball,Gerrit Cole,NYY,BOS,2025-01-15,6.5,0.61,over,2025-01-15T12:00:00Z,pending
+    fcst_01j8xkz3p4q5r6s7t8u9v0w2,pitcher_strikeouts,baseball,Dylan Cease,SDP,LAD,2025-01-15,7.5,0.58,over,2025-01-15T12:05:00Z,pending
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  The `/download` endpoint returns the same fields and applies the same data-rights exclusions as the `/forecasts` and `/grades` list endpoints. No additional fields or raw model internals are exposed through bulk export — the rights boundary is identical.
+</Note>
+
+## Iterating by date to handle large datasets
+
+If your total dataset exceeds 50,000 rows, split your export across multiple requests using the `date` filter — one request per game date. This pattern works for both `forecasts` and `grades`:
+
+```bash
+# Export grades for each date in a range (run this in a loop in your script)
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=grades&date=2025-01-14&format=csv" \
+  -o grades_2025-01-14.csv
+
+curl -s -H "Authorization: Bearer $FADE_API_KEY" \
+  "https://fade.sportshack.ai/api/v1/download?dataset=grades&date=2025-01-15&format=csv" \
+  -o grades_2025-01-15.csv
+```
+
+<Tip>
+  In Python or another scripting language, generate a list of dates in your target range with `datetime.date` and loop over them, writing each response to a separate file. After all requests complete, concatenate the files into a single dataset. This approach is more reliable than pagination for batch analytical workloads because each file is self-contained and can be retried independently if a request fails.
+</Tip>

@@ -1,20 +1,66 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Fade: Sports Probability Analytics by Sportshack"
+sidebarTitle: "Home"
+description: "Fade surfaces where Sportshack's model disagrees with the market — timestamped, immutable forecasts with a complete graded record and a Quant Partner API."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+The Fade is Sportshack's analytics product: a daily probability board that shows you exactly where the model diverges from the market, backed by a complete graded record that always includes misses. For teams building internal research tools, the Quant Partner API delivers those same forecasts with full provenance, versioned model identifiers, and bulk export capability.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="flag" href="/introduction">
+    Understand what Fade is, what data it produces, and who it's for.
+  </Card>
+  <Card title="How It Works" icon="chart-line" href="/how-it-works">
+    Learn how forecasts are issued, tracked, and graded end-to-end.
+  </Card>
+  <Card title="Quant Partner API" icon="key" href="/api-guide/overview">
+    Overview of the licensed probability feed for internal analytics teams.
+  </Card>
+  <Card title="API Quickstart" icon="rocket" href="/guides/quickstart-api">
+    Make your first authenticated API call and retrieve live forecasts.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Get Started
+
+<Steps>
+  <Step title="Create a Sportshack Account">
+    Sign up at [sportshack.ai](https://sportshack.ai/start?ref=fade) to access the Reality Engine board and today's free daily slate.
+  </Step>
+  <Step title="Request API Access">
+    Contact Sportshack at [fade.sportshack.ai/developers/access](https://fade.sportshack.ai/developers/access) with your use case, company, and preferred license term. Starting at $1,500/month.
+  </Step>
+  <Step title="Receive Your API Key">
+    After scope and terms are confirmed, your customer-named key is delivered once through a secure channel — shown once, never stored in plaintext.
+  </Step>
+  <Step title="Start Querying">
+    Pass your key as a Bearer token and start pulling forecasts, grades, and model history. See the [API Quickstart](/guides/quickstart-api) for working examples.
+  </Step>
+</Steps>
+
+## Explore the Docs
+
+<CardGroup cols={3}>
+  <Card title="Core Concepts" icon="book" href="/concepts/forecasts">
+    Forecasts, grading, and model history explained.
+  </Card>
+  <Card title="Authentication" icon="lock" href="/api-guide/authentication">
+    How to use Bearer-key auth on every request.
+  </Card>
+  <Card title="Bulk Export" icon="download" href="/guides/bulk-export">
+    Download forecasts or grades as JSON or CSV.
+  </Card>
+  <Card title="Data Model" icon="table" href="/reference/data-model">
+    Full field reference for every API response object.
+  </Card>
+  <Card title="Rate Limits" icon="gauge" href="/reference/rate-limits">
+    Default limits, 429 handling, and key management.
+  </Card>
+  <Card title="FAQ" icon="circle-question" href="/reference/faq">
+    Common questions about licensing, data, and access.
+  </Card>
+</CardGroup>
+
+<Note>
+  Fade is an analytics-only product. Sportshack does not accept wagers, hold funds, or process bets. Model figures are probabilities derived from devigged fair odds — a disagreement between two numbers, not a projected return and not a recommendation. Graded records always include misses. **21+.** If you or someone you know has a gambling problem, call 1-800-GAMBLER.
+</Note>

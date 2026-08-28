@@ -1,0 +1,80 @@
+---
+title: "How Fade Issues, Tracks, and Grades Forecasts"
+sidebarTitle: "How It Works"
+description: "Learn how Fade's Reality Engine issues timestamped probability forecasts, records provenance, and grades every outcome — including misses — against the market."
+---
+
+Every forecast Fade produces follows a strict, auditable lifecycle: a probability is issued before an event begins, locked to a provenance record, and graded to a binary outcome once the event resolves. The graded record is permanent and always includes misses — there is no survivorship bias in the Fade dataset. Understanding this lifecycle helps you interpret forecast objects correctly, evaluate calibration over time, and integrate the data confidently into your own workflows.
+
+## Devigged Fair Odds and the Reality Engine
+
+Sportsbooks embed margin (the "vig") into their lines, which distorts the implied probability of any outcome. Before comparing the model's forecast to the market, Fade removes that margin using a standard devigging procedure to recover the **market's implied fair probability** — the probability the market is pricing in absent the book's edge.
+
+The model independently produces its own forecast probability, called `p_yes`, for the same outcome. The **Reality Engine** is simply the comparison between these two figures:
+
+- If `p_yes` (model) and `p_market_implied` (devigged market) agree closely, there is no signal.
+- If they diverge beyond a configurable threshold, Fade surfaces that disagreement on the daily board as a **Reality Engine disagreement**.
+
+This is a model disagreement, not a recommendation. The edge may be real, illusory, or the result of data the model hasn't yet seen. It is your job as the analyst to evaluate it.
+
+## Forecast Lifecycle
+
+<Steps>
+  <Step title="Model Issues a Probability">
+    Before an event begins, the forecasting model evaluates available inputs — team data, situational context, market signals — and issues a probability (`p_yes`) for a defined outcome. The forecast is immediately written to the database with a precise `issued_at` timestamp. Once issued, `p_yes` is immutable for that forecast record.
+  </Step>
+  <Step title="Provenance Record Is Created">
+    Alongside the forecast, Fade writes a provenance record that includes:
+    - **`model_id`** — the unique identifier of the forecasting model that issued the probability.
+    - **`model_version`** — the semantic version of the model at time of issuance.
+    - **`inputs_hash`** — a SHA-256 hash of the normalized input feature set used to generate the forecast, allowing you to audit exactly what the model saw.
+    - **`issued_at`** — the authoritative timestamp of forecast issuance, in UTC ISO 8601 format.
+
+    This provenance record travels with the forecast object throughout its lifecycle and is always returned by the API.
+  </Step>
+  <Step title="Forecast Appears on the Daily Board">
+    Once issued, the forecast and its Reality Engine disagreement score (if any) appear on the Fade daily board at [fade.sportshack.ai](https://fade.sportshack.ai). Web users see the disagreement surfaced in context; API customers can retrieve the full forecast object, including `p_yes`, `p_market_implied`, and provenance fields, via the Quant Partner API.
+  </Step>
+  <Step title="Event Resolves">
+    When the real-world event concludes, the outcome is recorded. Fade ingests the official result from its data pipeline and prepares to grade all forecasts tied to that event.
+  </Step>
+  <Step title="Forecast Is Graded">
+    Each forecast is graded to a binary outcome:
+    - **`grade: 1`** — the outcome the model forecast (`p_yes`) actually occurred.
+    - **`grade: 0`** — the outcome did not occur (a miss).
+
+    Graded records are permanent. Misses are always included in the dataset — Fade does not filter, omit, or archive away incorrect forecasts. This full-record approach is essential for honest calibration analysis.
+  </Step>
+  <Step title="Grade Appears in the API and Historical Record">
+    Once graded, the forecast object is updated with `grade`, `resolved_at`, and the final `outcome` field. The record is queryable via the Quant Partner API alongside its original provenance data, giving you a single object that spans the full lifecycle from issuance to resolution.
+  </Step>
+</Steps>
+
+## Model Versioning and Provenance
+
+Fade tracks every model change through semantic versioning. If the forecasting model is updated — new features, retraining, architecture changes — the `model_version` field increments and the `model_id` may change. This means you can:
+
+- Segment your analysis by model version to detect calibration drift across versions.
+- Use `inputs_hash` to verify that two forecasts with identical inputs produced consistent outputs within the same model version.
+- Filter the `/api/v1/model-history` endpoint by `model_id` and `model_version` to retrieve version-specific performance metrics.
+
+<Tip>
+  Use the `/api/v1/model-history` endpoint to evaluate historical calibration across model versions before building any analysis on top of Fade data. Filtering by `model_id` and `model_version` lets you isolate performance windows that correspond to specific model states, giving you a cleaner signal than aggregating across version boundaries.
+</Tip>
+
+## Key Fields at a Glance
+
+| Field | Type | Description |
+|---|---|---|
+| `p_yes` | `float` | Model's issued forecast probability for the outcome |
+| `p_market_implied` | `float` | Devigged fair probability derived from market odds at issuance |
+| `issued_at` | `string` | UTC ISO 8601 timestamp of forecast issuance |
+| `model_id` | `string` | Unique identifier of the issuing model |
+| `model_version` | `string` | Semantic version of the model at issuance |
+| `inputs_hash` | `string` | SHA-256 hash of normalized input features |
+| `grade` | `integer` | `1` if forecast correct, `0` if miss; `null` if unresolved |
+| `resolved_at` | `string` | UTC ISO 8601 timestamp of event resolution and grading |
+
+<Warning>
+  Never discard or filter `grade: 0` records from your analysis. Fade's graded dataset includes all misses by design. Excluding them produces artificially inflated accuracy metrics and defeats the purpose of calibration-based evaluation.
+</Warning>

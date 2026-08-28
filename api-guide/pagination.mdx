@@ -1,0 +1,77 @@
+---
+title: "Paginate Through Fade Quant API Results with Cursors"
+sidebarTitle: "Pagination"
+description: "Use opaque cursors to traverse Fade API list endpoints, control page size with the limit param, and handle end-of-results detection reliably."
+---
+
+All Fade list endpoints — including `/forecasts`, `/grades`, and `/model-history` — return results one page at a time using an opaque cursor. This approach gives you stable, consistent ordering across requests without the off-by-one errors and skipped records that come with offset-based pagination. Results are always ordered newest-first, so you can sync incrementally by stopping as soon as you reach a cursor position you have already processed.
+
+## How Cursors Work
+
+Each paginated response includes a `next_cursor` field at the top level of the JSON envelope:
+
+- If `next_cursor` is a **string**, more results exist — pass it as the `cursor` query parameter on your next request.
+- If `next_cursor` is **`null`**, you have reached the last page.
+
+Do not attempt to parse, decode, or construct cursor values. Treat them as opaque tokens — their internal format is not part of the API contract and may change without notice.
+
+## Page Size
+
+| Parameter | Default | Maximum | Behavior |
+|---|---|---|---|
+| `limit` | `50` | `200` | Number of results returned per page |
+| `cursor` | _(none)_ | — | Opaque token returned by the previous response |
+
+<Tip>
+  Set `limit=200` when running a full sync or bulk backfill. Fetching the maximum page size reduces the total number of round trips and the time it takes to walk an entire dataset.
+</Tip>
+
+## Example: Walking a Full Result Set
+
+**Step 1 — Fetch the first page** (no cursor needed):
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/forecasts?limit=50" \
+  -H "Authorization: Bearer $FADE_API_KEY"
+```
+
+A typical response envelope looks like this:
+
+```json
+{
+  "data": [ ...50 forecast objects... ],
+  "next_cursor": "eyJpZCI6IjAxOTEyMzQ1LWFiY2QiLCJkaXIiOiJwcmV2In0"
+}
+```
+
+**Step 2 — Check `next_cursor`**: if the value is a non-null string, pass it as the `cursor` query parameter on the next request.
+
+**Step 3 — Fetch the next page**:
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/forecasts?limit=50&cursor=eyJpZCI6IjAxOTEyMzQ1LWFiY2QiLCJkaXIiOiJwcmV2In0" \
+  -H "Authorization: Bearer $FADE_API_KEY"
+```
+
+**Step 4 — Repeat** until `next_cursor` is `null`:
+
+```json
+{
+  "data": [ ...final page of results... ],
+  "next_cursor": null
+}
+```
+
+When `next_cursor` is `null`, stop iterating — you have consumed all available results.
+
+## Incremental Sync Pattern
+
+Because results are ordered newest-first, you can run incremental syncs efficiently:
+
+1. Record the `next_cursor` value from your most recent full sync.
+2. On the next run, walk forward from page one until you encounter a result whose timestamp is older than your last sync boundary.
+3. Stop early rather than walking the full history on every run.
+
+<Note>
+  Unknown query parameters are **rejected with a `422 Unprocessable Entity` response** — they are not silently ignored. If you add a query parameter that is not documented (for example, a typo like `limt=200` instead of `limit=200`), the API will return an error rather than proceeding with default behavior. Always verify parameter names against the [OpenAPI contract](https://fade.sportshack.ai/api/v1/openapi.json) before sending requests.
+</Note>

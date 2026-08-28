@@ -1,0 +1,129 @@
+---
+title: "GET /events/{eventTicker} — Event and Market Ladder"
+sidebarTitle: "GET /events"
+description: "Retrieve a single event by its venue ticker and the full ladder of known markets under it, each flagged with whether a current Sportshack forecast exists."
+---
+
+The `/events/{eventTicker}` endpoint returns a single event record plus every market Sportshack has associated with that event ticker — collectively referred to as the market ladder. Each market entry in the ladder carries all standard Market fields and an additional `has_forecast` boolean indicating whether at least one non-superseded Sportshack forecast currently exists for that market. Use this endpoint when you know the venue's event ticker and want to discover all forecastable contracts under it in a single call rather than filtering `/markets` manually.
+
+<Note>
+  This endpoint returns a `404` if Sportshack has no markets on record for the given event ticker. The ticker must match the venue's own `event_ticker` value exactly — there is no fuzzy matching or alias resolution.
+</Note>
+
+## Path Parameters
+
+<ParamField path="eventTicker" type="string" required>
+  The venue-issued event ticker string, for example `"SUPERBOWL-LIX"` or `"NBA-GSW-LAL-20250112"`. This value maps directly to the `event_ticker` field on Market objects. Case-sensitivity varies by venue; use the exact format the venue publishes.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="api_version" type="string">
+  Always `"1"`.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The event object containing metadata and its full market ladder.
+
+  <Expandable title="Event object fields">
+    <ResponseField name="event_ticker" type="string">
+      The venue-issued event ticker, echoed from the path parameter.
+    </ResponseField>
+    <ResponseField name="venue" type="string">
+      The prediction venue this event belongs to, for example `"kalshi"`.
+    </ResponseField>
+    <ResponseField name="sport" type="string | null">
+      Sportshack-assigned sport label for this event. `null` if the event has not been classified.
+    </ResponseField>
+    <ResponseField name="family" type="string | null">
+      Sportshack prediction family label for the event's primary market type. `null` if unclassified.
+    </ResponseField>
+    <ResponseField name="official_venue_url" type="string | null">
+      Direct URL to the event on the originating venue's website. `null` if not available.
+    </ResponseField>
+    <ResponseField name="markets" type="object[]">
+      Ordered array of every market Sportshack knows under this event ticker. Each entry is a full Market object plus the `has_forecast` flag.
+
+      <Expandable title="Market ladder item fields">
+        <ResponseField name="market_id" type="string (uuid)">
+          Sportshack's stable UUID for this market.
+        </ResponseField>
+        <ResponseField name="venue" type="string">
+          The prediction venue where this market originates.
+        </ResponseField>
+        <ResponseField name="venue_market_id" type="string">
+          The venue's own identifier for this contract.
+        </ResponseField>
+        <ResponseField name="event_ticker" type="string | null">
+          The event grouping identifier, matching the path parameter.
+        </ResponseField>
+        <ResponseField name="sport" type="string | null">
+          Sportshack-assigned sport label. `null` if unclassified.
+        </ResponseField>
+        <ResponseField name="family" type="string | null">
+          Sportshack prediction family label. `null` if unclassified.
+        </ResponseField>
+        <ResponseField name="series" type="string">
+          The contract series this market belongs to.
+        </ResponseField>
+        <ResponseField name="contract_rules_hash" type="string | null">
+          SHA-256 fingerprint of the contract definition text. `null` if not captured.
+        </ResponseField>
+        <ResponseField name="official_venue_url" type="string | null">
+          Direct URL to this specific market on the venue. `null` if not available.
+        </ResponseField>
+        <ResponseField name="has_forecast" type="boolean">
+          `true` if at least one non-superseded Sportshack forecast currently exists for this market. Use this flag to quickly identify which contracts in the ladder you can pull forecast probabilities for.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/events/SUPERBOWL-LIX" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+## Sample Response
+
+```json
+{
+  "api_version": "1",
+  "data": {
+    "event_ticker": "SUPERBOWL-LIX",
+    "venue": "kalshi",
+    "sport": "nfl",
+    "family": "nfl_spreads",
+    "official_venue_url": "https://kalshi.com/events/SUPERBOWL-LIX",
+    "markets": [
+      {
+        "market_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "venue": "kalshi",
+        "venue_market_id": "SUPERBOWL-LIX-SPREAD-3.5",
+        "event_ticker": "SUPERBOWL-LIX",
+        "sport": "nfl",
+        "family": "nfl_spreads",
+        "series": "NFL Championship Spreads",
+        "contract_rules_hash": "9f86d081884c7d659a2feaa0c55ad015",
+        "official_venue_url": "https://kalshi.com/markets/SUPERBOWL-LIX-SPREAD-3.5",
+        "has_forecast": true
+      },
+      {
+        "market_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "venue": "kalshi",
+        "venue_market_id": "SUPERBOWL-LIX-TOTAL-48.5",
+        "event_ticker": "SUPERBOWL-LIX",
+        "sport": "nfl",
+        "family": "nfl_totals",
+        "series": "NFL Championship Totals",
+        "contract_rules_hash": "7d4e1a3bc92f056d8e3a1b4c5d6e7f89",
+        "official_venue_url": "https://kalshi.com/markets/SUPERBOWL-LIX-TOTAL-48.5",
+        "has_forecast": false
+      }
+    ]
+  }
+}
+```

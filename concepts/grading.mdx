@@ -1,0 +1,98 @@
+---
+title: "How Fade Grades Forecasts and Records All Outcomes"
+sidebarTitle: "Grading"
+description: "Understand the forecast grading lifecycle, what each grading_status value means, and how to retrieve graded outcomes from the Fade API."
+---
+
+Grading is the process by which Fade resolves a forecast against the real-world outcome of a proposition. Every forecast that Fade issues eventually transitions through a defined lifecycle — from `pending` while the event is ongoing, to a final state of `graded`, `void`, or `unavailable`. The grade record ties a `forecast_id` to an `outcome` and a `graded_at` timestamp, giving you a complete picture of model performance across every proposition the model addressed.
+
+## The Grading Lifecycle
+
+When a forecast is first issued, its grade record is created in the `pending` state. No outcome has been observed yet. As the event completes and results are confirmed, Fade updates the grade to one of three terminal states: `graded`, `void`, or `unavailable`.
+
+<Steps>
+  <Step title="pending">
+    The event has not yet concluded, or the outcome has not been confirmed. `outcome` is `null` and `graded_at` is `null`.
+  </Step>
+  <Step title="graded">
+    The proposition resolved with a definitive YES or NO result. `outcome` is `1` (YES) or `0` (NO/miss), and `graded_at` records when the result was confirmed.
+  </Step>
+  <Step title="void">
+    The proposition was cancelled, postponed without rescheduling, or otherwise rendered unresolvable. `outcome` is `null`.
+  </Step>
+  <Step title="unavailable">
+    Grading data cannot be obtained for this proposition — for example, the result source is unreachable or the proposition was delisted before resolution. `outcome` is `null`.
+  </Step>
+</Steps>
+
+## Understanding outcome Values
+
+The `outcome` field uses an integer encoding:
+
+- **`1`** — The proposition resolved **YES**. The event satisfied the stated condition (e.g., the player exceeded the threshold).
+- **`0`** — The proposition resolved **NO**. The condition was not met — this is a **miss** from the model's perspective if `p_yes` was high.
+- **`null`** — The outcome is not yet known, or the grade is `void`/`unavailable`.
+
+<Warning>
+  Fade **always** includes miss records (outcome `0`) in graded results. Misses are never filtered out or suppressed. Any downstream analysis — calibration checks, win-rate calculations, Brier scoring — must account for the full distribution of outcomes, including all misses. Filtering only wins produces misleading performance metrics.
+</Warning>
+
+## graded_at Timestamp
+
+`graded_at` is a UTC ISO-8601 datetime marking when Fade confirmed the outcome and wrote the terminal grade. It is `null` for any non-`graded` status. Use `graded_at` to sequence outcomes chronologically and to join grades to external result feeds with confidence about recency.
+
+## Grading Status Reference
+
+<AccordionGroup>
+  <Accordion title="pending — Awaiting resolution">
+    The forecast has been issued but the event outcome is not yet confirmed. Both `outcome` and `graded_at` are `null`. A record stays `pending` until Fade receives a reliable result signal or the proposition is declared void/unavailable.
+  </Accordion>
+  <Accordion title="graded — Definitive result recorded">
+    The proposition resolved with a clear YES (`outcome: 1`) or NO (`outcome: 0`). `graded_at` is set to the UTC time the result was confirmed. This is the only status under which `outcome` carries a non-null integer value.
+  </Accordion>
+  <Accordion title="void — Proposition cancelled or unresolvable">
+    The event or proposition was cancelled, postponed indefinitely, or otherwise declared invalid before resolution. `outcome` is `null`. Void records are excluded from model-history aggregates because no resolution occurred.
+  </Accordion>
+  <Accordion title="unavailable — Result data cannot be obtained">
+    Fade attempted to grade the proposition but could not retrieve a reliable outcome — for example, the authoritative data source returned no result or the proposition was removed from the venue. `outcome` is `null`. Treat `unavailable` similarly to `void` in performance calculations.
+  </Accordion>
+</AccordionGroup>
+
+## Grade Object Fields
+
+<ResponseField name="forecast_id" type="uuid" required>
+  The forecast this grade record corresponds to. One-to-one with the forecast object.
+</ResponseField>
+
+<ResponseField name="family" type="string | null">
+  Inherited from the forecast's `family` field. Provided here for convenience when querying grades without joining forecast records.
+</ResponseField>
+
+<ResponseField name="outcome" type="integer | null">
+  `1` = YES resolved, `0` = NO resolved (miss). `null` for pending, void, and unavailable records.
+</ResponseField>
+
+<ResponseField name="grading_status" type="string" required>
+  Current grading state. One of: `pending`, `graded`, `void`, `unavailable`.
+</ResponseField>
+
+<ResponseField name="graded_at" type="datetime | null">
+  UTC timestamp when the grade was confirmed. Only non-null when `grading_status` is `graded`.
+</ResponseField>
+
+## Fetching Graded Outcomes
+
+Use the `grading_status` query parameter on `GET /api/v1/grades` to retrieve only records with a confirmed outcome. The example below fetches all graded records, which include both wins (`outcome: 1`) and misses (`outcome: 0`).
+
+```bash
+curl https://fade.sportshack.ai/api/v1/grades \
+  --get \
+  --data-urlencode "grading_status=graded" \
+  -H "Authorization: Bearer fade_live_..."
+```
+
+The response is an array of grade objects. Because Fade always includes misses, the result set reflects the true outcome distribution — use it directly for Brier scoring, calibration curves, or win-rate analysis.
+
+<Tip>
+  Combine the `grading_status=graded` filter with a `family` filter to scope your analysis to a single proposition category. This is particularly useful when comparing model performance across different sport or stat families.
+</Tip>

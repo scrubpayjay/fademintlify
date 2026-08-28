@@ -1,0 +1,103 @@
+---
+title: "Fade API Data Licensing, Permitted Uses, and Restrictions"
+sidebarTitle: "Licensing"
+description: "What your Fade API license covers, what requires a separate agreement, how venue identifiers are classified, and how to inquire about publisher rights."
+---
+
+Your access to the Fade Quant Partner API is governed by a data license that defines permitted uses clearly and explicitly. Before building on top of Fade data, take a few minutes to understand what your license grants you, what it does not cover, and how to pursue additional rights if your use case requires them.
+
+<Warning>
+  **Redistribution and resale of API responses — in whole or in part — require a separate written agreement with Sportshack.** Publishing Fade forecasts, probabilities, or any derivative of API response data to external audiences without a publisher license is a violation of your usage terms.
+</Warning>
+
+---
+
+## Standard License: Internal Analytical Use
+
+The Quant Partner API subscription — available at **$1,500/month** or **$5,000/season** — grants you a license for **internal analytical use only**. This means you and your authorized team members may:
+
+- Query the API and store responses in your own internal systems.
+- Build analytical models, dashboards, and research tools for your own decision-making.
+- Evaluate forecast performance and calibration against historical grades.
+- Incorporate Fade probabilities into your own proprietary research workflows.
+
+All use is subject to the terms agreed upon at subscription.
+
+---
+
+## What's Included
+
+<CardGroup cols={1}>
+  <Card title="Sportshack-Issued Probabilities" icon="chart-line">
+    Every forecast object carries a `p_yes` value — the Reality Engine's probability estimate that a binary proposition resolves Yes. This is the primary analytical product you are licensing.
+  </Card>
+  <Card title="Full Provenance Metadata" icon="fingerprint">
+    Each forecast includes model identification (`model_id`, `model_version`), input hashing (`inputs_hash`, `inputs_as_of`), issuance evidence (`issuance_evidence_source`, `issuance_evidence_source_id`), and cryptographic contract-rules anchoring (`ContractEvidence`). You can verify exactly what the model saw and when.
+  </Card>
+  <Card title="Resolution Outcomes and Grades" icon="check-circle">
+    Historical `Grade` records tell you how each forecast resolved — Yes, No, void, or unavailable — enabling rigorous backtesting and calibration analysis.
+  </Card>
+  <Card title="Family-Level Performance History" icon="table">
+    `FamilyHistory` records give you aggregate Brier scores, expected wins, and actual wins by proposition family and ledger scope — ready-made calibration summaries.
+  </Card>
+  <Card title="Market Identifiers and Venue References" icon="link">
+    Markets include `venue`, `venue_market_id`, and `event_ticker` fields that let you navigate to the originating contract on the relevant venue. These are provided as navigational references — see the field-licensing note below.
+  </Card>
+</CardGroup>
+
+---
+
+## What's Not Included
+
+The Fade API is a **Sportshack analytics product**. It does not carry, and your license does not grant access to, any of the following:
+
+<CardGroup cols={1}>
+  <Card title="Venue Prices, Bids, and Asks" icon="dollar-sign">
+    The API contains no current or historical price data from any venue. There are no bid prices, ask prices, mid prices, last-traded prices, or mark prices in any response object.
+  </Card>
+  <Card title="Order Books and Liquidity Data" icon="book">
+    No order book snapshots, depth-of-market data, open interest, or liquidity metrics are available through the API.
+  </Card>
+  <Card title="Trade History and Volume" icon="arrow-right-arrow-left">
+    No trade records, fill histories, contract volumes, or notional value data are present in any response.
+  </Card>
+  <Card title="Venue Account or Position Data" icon="lock">
+    The API has no connection to any venue account. It cannot read balances, positions, open orders, or settlement records.
+  </Card>
+</CardGroup>
+
+### Field-Licensing Classification: Venue Identifiers
+
+Fields such as `venue`, `venue_market_id`, and `event_ticker` appear on Market and Forecast objects. These fields are **navigational references only** — they allow you to look up the corresponding contract on the originating venue's website or API. They do not constitute a license to scrape, mirror, or redistribute venue data. Any use of venue data beyond navigating to a publicly accessible URL is governed by that venue's own terms of service.
+
+---
+
+## What Requires a Separate Agreement
+
+The following uses are **not permitted** under the standard internal-use license. Each requires a separate written agreement with Sportshack before any use begins:
+
+- Publishing Fade forecasts or `p_yes` values on a public website, app, or platform.
+- Distributing API response data to third parties, paying or non-paying.
+- Reselling access to Fade data as part of a data product or subscription service.
+- White-labeling or re-branding Fade outputs for commercial distribution.
+- Embedding Fade probabilities in any media product intended for external audiences.
+
+---
+
+## Publisher License Path
+
+If you are a media company, data distributor, or platform operator interested in publishing Fade probabilities to an external audience, contact Sportshack to discuss publisher licensing terms.
+
+Send an email to **sportshackdfs@gmail.com** with the subject line:
+
+> **Sportshack Publisher License**
+
+Include a brief description of your platform, intended audience size, and how you plan to use the data. A member of the Sportshack team will respond with available licensing structures.
+
+---
+
+## Analytical Information Disclaimer
+
+<Warning>
+  Fade forecasts are **analytical information produced by a probabilistic model**. They are not investment advice, financial advice, or a recommendation to transact in any contract, security, or financial instrument. Sportshack is an analytics company — it does not operate a wagering service, does not facilitate transactions, and does not hold any wagering or financial services license. You are solely responsible for how you use Fade data in your own decision-making.
+</Warning>

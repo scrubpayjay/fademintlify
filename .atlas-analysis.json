@@ -1,30 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "saas",
+  "projectName": "Fade",
+  "projectDescription": "The Fade is a sports probability analytics platform by Sportshack that surfaces model-vs-market disagreements as timestamped, provenance-tracked forecasts, with a Quant Partner API for internal research and decision-support workflows.",
   "theme": "luma",
-  "name": "Fade",
-  "colors": {
-    "primary": "#a3e635",
-    "light": "#a3e635",
-    "dark": "#65a30d"
-  },
-  "favicon": "/favicon.svg",
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "sportshack.ai",
-        "href": "https://sportshack.ai"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get Access",
-      "href": "https://fade.sportshack.ai/developers/access"
-    }
-  },
+  "primaryColor": "#a3e635",
+  "lightColor": "#a3e635",
+  "darkColor": "#65a30d",
   "navigation": {
     "tabs": [
       {
@@ -94,23 +75,25 @@
       }
     ]
   },
-  "footer": {
-    "links": [
-      {
-        "title": "Product",
-        "items": [
-          { "label": "Reality Engine", "href": "https://fade.sportshack.ai" },
-          { "label": "Quant Partner API", "href": "https://fade.sportshack.ai/developers" },
-          { "label": "Sportshack.ai", "href": "https://sportshack.ai" }
-        ]
-      },
-      {
-        "title": "Legal",
-        "items": [
-          { "label": "Terms", "href": "https://sportshack.ai/terms" },
-          { "label": "Privacy", "href": "https://sportshack.ai/privacy" }
-        ]
-      }
-    ]
-  }
+  "keyFeatures": [
+    "Reality Engine — daily board of model-vs-market probability disagreements across MLB, NFL, and more",
+    "Timestamped, immutable forecast issuance with full provenance and contract evidence",
+    "Graded record that always includes misses — never filtered or cherry-picked",
+    "Quant Partner API with Bearer-key authentication and opaque-cursor pagination",
+    "Bulk JSON/CSV export of forecasts and grades (up to 50,000 rows)",
+    "Per-family model history with Brier scores and expected vs. actual win aggregates",
+    "OpenAPI 3.0 contract available publicly at /api/v1/openapi.json",
+    "Customer-specific API keys — independently rate-limited and revocable"
+  ],
+  "publicApiSurface": [
+    "GET /api/v1/manifest",
+    "GET /api/v1/openapi.json",
+    "GET /api/v1/markets",
+    "GET /api/v1/events/{eventTicker}",
+    "GET /api/v1/forecasts",
+    "GET /api/v1/forecasts/{forecastId}",
+    "GET /api/v1/grades",
+    "GET /api/v1/model-history",
+    "GET /api/v1/download"
+  ]
 }

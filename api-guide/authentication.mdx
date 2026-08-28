@@ -1,0 +1,73 @@
+---
+title: "Authenticate Every Request to the Fade Quant Partner API"
+sidebarTitle: "Authentication"
+description: "Pass your Fade API key as a Bearer token in the Authorization header and handle 401 and 429 error responses in your integration correctly."
+---
+
+Every request to a Fade data endpoint must include your API key as a Bearer token in the `Authorization` header. The key authenticates your identity, enforces your rate limit, and ties the request to your specific license. There are no session tokens, cookies, or OAuth flows — just the header on every call.
+
+## Header Format
+
+Set the `Authorization` header exactly as shown below. Replace the placeholder with your issued key, which begins with `fade_live_`.
+
+```
+Authorization: Bearer fade_live_...
+```
+
+## Example Request
+
+The following `curl` command fetches your account manifest and demonstrates the correct header format:
+
+```bash
+curl -s https://fade.sportshack.ai/api/v1/manifest \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+A successful response returns `200 OK` with a JSON body describing your key's capabilities and account metadata.
+
+## Using an Environment Variable
+
+Never hardcode your API key in source files or scripts. Store it as an environment variable and reference it at runtime:
+
+```bash
+# Set the variable in your shell or secrets manager
+export FADE_API_KEY="fade_live_YOUR_KEY_HERE"
+
+# Reference it in curl
+curl -s https://fade.sportshack.ai/api/v1/forecasts \
+  -H "Authorization: Bearer $FADE_API_KEY"
+```
+
+Add `FADE_API_KEY` to your `.gitignore`-d `.env` file or inject it through your deployment platform's secrets management system (for example, GitHub Actions secrets, AWS Secrets Manager, or Doppler).
+
+<Warning>
+  Never log, commit, or share your API key. Sportshack stores only a **hash** of your key server-side — the plaintext value is shown exactly once at delivery and cannot be recovered. If your key is exposed, contact [sportshackdfs@gmail.com](mailto:sportshackdfs@gmail.com) immediately to have it revoked and a replacement issued.
+</Warning>
+
+## Authentication Error Responses
+
+| Status | Meaning | Action |
+|---|---|---|
+| `401 Unauthorized` | Key is missing, malformed, invalid, or revoked | Verify the header format and that the key is active; contact Sportshack if the key was recently issued |
+| `429 Too Many Requests` | You have exceeded 120 requests per key per minute | Back off and retry after the window resets; consider batching requests or increasing page size |
+
+Both error responses return a JSON body with a `message` field describing the specific failure reason.
+
+## Key Security Model
+
+Sportshack issues each key once through a secure delivery channel. After delivery:
+
+- The plaintext key exists **only** in your possession and any systems you store it in.
+- Sportshack retains only a server-side **hash** of the key — it cannot be retrieved or resent.
+- Keys are independently rate-limited and independently revocable, so compromising one key does not affect other keys under your account.
+- Key names reflect your account or organization to make audit logs and support requests easier to trace.
+
+## Public Endpoint
+
+`GET /api/v1/openapi.json` is the **only** endpoint that does not require authentication. You can fetch the full OpenAPI 3.x contract at any time without a key:
+
+```bash
+curl -s https://fade.sportshack.ai/api/v1/openapi.json
+```
+
+All other endpoints — including `/manifest`, `/markets`, `/forecasts`, `/grades`, `/model-history`, and `/download` — require a valid `Authorization: Bearer` header.

@@ -1,0 +1,59 @@
+---
+title: "Fade: Sports Probability Analytics by Sportshack"
+sidebarTitle: "Introduction"
+description: "Fade surfaces model-vs-market probability disagreements across MLB and NFL, helping analysts, researchers, and quant teams evaluate forecast edge."
+---
+
+Fade is a sports probability analytics platform built by Sportshack that identifies disagreements between a proprietary forecasting model and the implied probabilities derived from current market odds. When the model and the market diverge meaningfully, Fade surfaces that signal — called a **Reality Engine** disagreement — so analysts, researchers, and quantitative teams can study, back-test, and evaluate it within their own workflows. Sportshack is a strictly analytics-only platform: no wagering is facilitated, no funds are held, and no bets are processed. All outputs are probabilities, not recommendations.
+
+<Note>
+  Fade is an analytics and research tool only. Sportshack does not facilitate wagering, hold funds, or process bets of any kind. All forecast outputs are statistical probabilities derived from devigged fair odds — not betting advice or recommendations. Must be 21 or older to access sports-wagering markets in your jurisdiction; consult applicable local laws before acting on any probability data.
+</Note>
+
+## What Problems Fade Solves
+
+Sports probability markets are noisy. Line movements, sharp action, public sentiment, and book margin all blur the signal embedded in the odds. Fade's Reality Engine strips out book margin through a devigging process to recover the market's implied fair probability, then compares that figure against the model's own forecast. The resulting disagreement score gives you a clean, timestamped, provenance-tracked signal that you can evaluate over time with a complete graded record — including misses.
+
+## Who Uses Fade
+
+Fade is designed for three primary audiences:
+
+- **Independent analysts and researchers** who want a structured, auditable dataset of model-vs-market disagreements to study forecast calibration and market efficiency.
+- **Quantitative teams** at sports analytics firms who need a reliable feed of timestamped probabilities and grades they can pipe into their own models or dashboards.
+- **Data-driven sports professionals** who want daily visibility into where a systematic model disagrees with consensus market pricing, across MLB and NFL today, with NBA, NHL, MMA, Soccer, Tennis, and Golf coming soon.
+
+## Two Product Surfaces
+
+Fade is accessible through two distinct surfaces depending on your use case.
+
+<CardGroup cols={2}>
+  <Card title="Reality Engine Web App" icon="chart-mixed" href="how-it-works">
+    Explore today's model-vs-market disagreements on the daily board at fade.sportshack.ai. Sign up for a free Sportshack account to get started — no API key required.
+  </Card>
+  <Card title="Quant Partner API" icon="code" href="api-guide/overview">
+    Licensed customers get read-only programmatic access to issued forecast probabilities, provenance records, and grades via the Quant Partner API.
+  </Card>
+  <Card title="Quickstart: API" icon="bolt" href="guides/quickstart-api">
+    Get your first authenticated API response in under five minutes. Covers authentication, your first request, and reading a forecast object.
+  </Card>
+  <Card title="Data Model Reference" icon="database" href="reference/data-model">
+    Detailed schema reference for forecast objects, grade records, provenance fields, and model-history endpoints.
+  </Card>
+</CardGroup>
+
+## Sports Coverage
+
+MLB and NFL are live on Fade today. The following sports are coming soon:
+
+- NBA
+- NHL
+- MMA
+- Soccer
+- Tennis
+- Golf
+
+## Next Steps
+
+If you want access to the daily board, [create a free Sportshack account](https://sportshack.ai/start?ref=fade) — no license or payment required.
+
+If you need programmatic access to forecast data, probabilities, and grades, see the [Account Setup](account-setup) page for details on the Quant Partner API onboarding process.

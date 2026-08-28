@@ -1,0 +1,185 @@
+---
+title: "GET /forecasts/{forecastId} — Full Forecast Provenance"
+sidebarTitle: "GET /forecasts/:id"
+description: "Retrieve a single forecast with its full issuance provenance and ContractEvidence metadata — rules hashes, source URLs, and capture timestamps included."
+---
+
+The `/forecasts/{forecastId}` endpoint returns all the fields available on list forecasts plus the complete issuance provenance record and the ContractEvidence block that was captured at the time Sportshack evaluated this market. ContractEvidence includes the hashes and source URLs for the product family documentation and rulebook that governed the contract at issuance — giving you a full audit chain from probability output back to the contract rules that defined the question. Verbatim venue rules text and any venue price fields are omitted regardless of what was captured, in compliance with the analytical license boundary.
+
+<Note>
+  The `snapshot_id` field is a provenance reference only. It identifies the internal input snapshot used to produce this forecast but the snapshot contents — raw model inputs — are not redistributed through the API.
+</Note>
+
+## Path Parameters
+
+<ParamField path="forecastId" type="string (uuid)" required>
+  The Sportshack UUID of the forecast to retrieve. Obtain this value from the `forecast_id` field on any list response from `GET /forecasts`.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="api_version" type="string">
+  Always `"1"`.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The full forecast detail object.
+
+  <Expandable title="Core forecast fields">
+    <ResponseField name="forecast_id" type="string (uuid)">
+      Sportshack's stable UUID for this forecast record.
+    </ResponseField>
+    <ResponseField name="proposition_id" type="string">
+      Identifier for the specific proposition this forecast covers.
+    </ResponseField>
+    <ResponseField name="market_id" type="string (uuid)">
+      The Sportshack market UUID this forecast is attached to.
+    </ResponseField>
+    <ResponseField name="family" type="string | null">
+      Sportshack prediction family, for example `"nfl_spreads"`. `null` if unclassified.
+    </ResponseField>
+    <ResponseField name="threshold" type="number | null">
+      The numeric threshold this forecast evaluates, for example `-3.5`. `null` when not applicable.
+    </ResponseField>
+    <ResponseField name="operator" type="string | null">
+      Comparison direction for `threshold`. `null` when `threshold` is `null`.
+    </ResponseField>
+    <ResponseField name="p_yes" type="number">
+      Probability estimate that the YES outcome resolves, as a decimal between `0` and `1`.
+    </ResponseField>
+    <ResponseField name="model_id" type="string">
+      Identifier for the model that produced this forecast.
+    </ResponseField>
+    <ResponseField name="model_version" type="string">
+      Semantic version of the model at issuance.
+    </ResponseField>
+    <ResponseField name="inputs_hash" type="string">
+      Fingerprint of the input data set used to produce this forecast.
+    </ResponseField>
+    <ResponseField name="inputs_as_of" type="datetime | null">
+      Point-in-time of the input data. `null` if not recorded.
+    </ResponseField>
+    <ResponseField name="issued_at" type="datetime | null">
+      UTC timestamp of when Sportshack issued this forecast. `null` means issuance time is UNKNOWN.
+    </ResponseField>
+    <ResponseField name="scheduled_start_utc" type="datetime | null">
+      UTC scheduled start time of the underlying event. `null` if not available.
+    </ResponseField>
+    <ResponseField name="issuance_evidence_source" type="string | null">
+      Name of the external data source used to verify issuance. `null` if not recorded.
+    </ResponseField>
+    <ResponseField name="issuance_evidence_source_id" type="string | null">
+      The identifier within `issuance_evidence_source` confirming issuance. `null` if not recorded.
+    </ResponseField>
+    <ResponseField name="snapshot_id" type="string | null">
+      Provenance reference identifying the internal input snapshot. Not redistributed. `null` if not recorded.
+    </ResponseField>
+    <ResponseField name="venue" type="string | null">
+      The prediction venue this forecast is associated with. `null` if not recorded.
+    </ResponseField>
+    <ResponseField name="venue_market_id" type="string">
+      The venue's own identifier for this market.
+    </ResponseField>
+    <ResponseField name="event_ticker" type="string | null">
+      The venue's event grouping ticker. `null` if not applicable.
+    </ResponseField>
+    <ResponseField name="created_at" type="datetime | null">
+      UTC timestamp of when this record was written to the Fade database. `null` in rare historical backfill cases.
+    </ResponseField>
+  </Expandable>
+
+  <Expandable title="Provenance and grading fields">
+    <ResponseField name="grading_status" type="string">
+      Current grading status of this forecast: `"pending"`, `"graded"`, `"void"`, or `"unavailable"`.
+    </ResponseField>
+    <ResponseField name="issuance_evidence_hash" type="string | null">
+      Hash of the raw issuance evidence payload captured from `issuance_evidence_source`. Used for independent verification. `null` if evidence was not captured.
+    </ResponseField>
+    <ResponseField name="provenance_recorded_at" type="datetime | null">
+      UTC timestamp of when the provenance record for this forecast was finalized and written. `null` if not yet recorded.
+    </ResponseField>
+    <ResponseField name="official_venue_url" type="string | null">
+      Direct URL to the market on the originating venue. Provided for reference only. `null` if not available.
+    </ResponseField>
+  </Expandable>
+
+  <Expandable title="contract_evidence object">
+    <ResponseField name="contract_evidence" type="object | null">
+      The ContractEvidence block captured at the time Sportshack evaluated this market. `null` if no contract evidence was recorded for this forecast.
+
+      <Expandable title="ContractEvidence fields">
+        <ResponseField name="market_rules_hash" type="string">
+          SHA-256 fingerprint of the complete market rules text as captured. Use this to verify that the contract definition has not changed since issuance.
+        </ResponseField>
+        <ResponseField name="family_doc_sha256" type="string | null">
+          SHA-256 fingerprint of the product family documentation PDF or document at the time of capture. `null` if no family document was captured.
+        </ResponseField>
+        <ResponseField name="family_doc_source_url" type="string | null">
+          URL from which the family documentation was retrieved. `null` if not recorded.
+        </ResponseField>
+        <ResponseField name="rulebook_sha256" type="string | null">
+          SHA-256 fingerprint of the venue rulebook document captured at issuance. `null` if no rulebook was captured.
+        </ResponseField>
+        <ResponseField name="rulebook_source_url" type="string | null">
+          URL from which the rulebook was retrieved. `null` if not recorded.
+        </ResponseField>
+        <ResponseField name="product_family" type="string | null">
+          The venue's own product family label for this contract, for example `"NFL Game Spreads"`. May differ from the Sportshack `family` label. `null` if not captured.
+        </ResponseField>
+        <ResponseField name="captured_at" type="datetime | null">
+          UTC timestamp of when this evidence block was captured. `null` if not recorded.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/forecasts/c3d4e5f6-a7b8-9012-cdef-123456789012" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+## Sample Response
+
+```json
+{
+  "api_version": "1",
+  "data": {
+    "forecast_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "proposition_id": "nfl_spread_SUPERBOWL-LIX-SPREAD-3.5",
+    "market_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "family": "nfl_spreads",
+    "threshold": -3.5,
+    "operator": "greater_than",
+    "p_yes": 0.58,
+    "model_id": "reality-engine-v3",
+    "model_version": "3.4.1",
+    "inputs_hash": "e3b0c44298fc1c149afb4c8996fb924",
+    "inputs_as_of": "2025-02-09T00:00:00Z",
+    "issued_at": "2025-02-09T14:05:22Z",
+    "scheduled_start_utc": "2025-02-09T23:30:00Z",
+    "issuance_evidence_source": "kalshi_api",
+    "issuance_evidence_source_id": "snap_20250209_140500",
+    "snapshot_id": "snap_20250209_140500",
+    "venue": "kalshi",
+    "venue_market_id": "SUPERBOWL-LIX-SPREAD-3.5",
+    "event_ticker": "SUPERBOWL-LIX",
+    "created_at": "2025-02-09T14:05:23Z",
+    "grading_status": "graded",
+    "issuance_evidence_hash": "5d41402abc4b2a76b9719d911017c592",
+    "provenance_recorded_at": "2025-02-09T14:05:25Z",
+    "official_venue_url": "https://kalshi.com/markets/SUPERBOWL-LIX-SPREAD-3.5",
+    "contract_evidence": {
+      "market_rules_hash": "9f86d081884c7d659a2feaa0c55ad015",
+      "family_doc_sha256": "aabbcc1234567890aabbcc1234567890",
+      "family_doc_source_url": "https://kalshi.com/docs/nfl-game-spreads-rules.pdf",
+      "rulebook_sha256": "ddeeff0987654321ddeeff0987654321",
+      "rulebook_source_url": "https://kalshi.com/rulebook.pdf",
+      "product_family": "NFL Game Spreads",
+      "captured_at": "2025-02-09T14:05:20Z"
+    }
+  }
+}
+```

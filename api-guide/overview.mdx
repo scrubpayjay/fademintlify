@@ -1,0 +1,66 @@
+---
+title: "Quant Partner API: Sports Probability Feed Overview"
+sidebarTitle: "Overview"
+description: "Understand what the Fade Quant Partner API provides, what it excludes, and how data is delivered to licensed analytical integrations."
+---
+
+The Fade Quant Partner API gives licensed customers read-only programmatic access to Sportshack-issued sports probabilities, provenance records, contract evidence, and grades — the same signal surfaces available through the Reality Engine web app, delivered as a structured JSON feed you can integrate directly into your own analytical workflows. The API does not expose venue pricing, market state, or order book data of any kind, and your license covers internal analytical use only.
+
+## What the API Includes and Excludes
+
+Review the table below before designing your integration. Building against data types that are not included will result in empty fields or missing endpoints.
+
+| ✅ Included | ❌ Not Included |
+|---|---|
+| Sportshack-issued forecast probabilities | Venue market prices (bids, asks) |
+| Model-vs-market disagreement scores | Order books or liquidity data |
+| Provenance records and contract evidence | Trade history or volume data |
+| Forecast grades (outcomes, hit/miss) | Price history from any venue |
+| Model history and version metadata | Venue market state or status text |
+| Bulk CSV export via `/download` | Redistribution rights (require separate agreement) |
+| Event and market identifiers | Any data facilitating wagering activity |
+
+<Note>
+  All data accessed through the Quant Partner API is licensed for **internal analytical use only**. Redistributing, reselling, or embedding Fade data in a product or service delivered to third parties requires a separate written publisher agreement with Sportshack. Contact [sportshackdfs@gmail.com](mailto:sportshackdfs@gmail.com) with the subject **"Sportshack Publisher License"** to begin that conversation.
+</Note>
+
+## Delivery Characteristics
+
+The API is a REST-style JSON feed served over HTTPS from `https://fade.sportshack.ai/api/v1`. Every data endpoint requires a Bearer API key in the `Authorization` header. Responses use stable JSON envelopes so new optional fields can be added without breaking existing parsers. All list endpoints paginate with an opaque cursor and return results in stable newest-first order.
+
+- **Authentication:** Bearer key (`Authorization: Bearer fade_live_...`) on every data request
+- **Pagination:** Opaque cursor via `next_cursor`; default page size 50, maximum 200
+- **Bulk export:** JSON streaming and CSV download available via `GET /download`
+- **Timestamps:** All timestamps are UTC ISO-8601; missing values are explicit `null`, never zeros
+- **OpenAPI contract:** Publicly available at [https://fade.sportshack.ai/api/v1/openapi.json](https://fade.sportshack.ai/api/v1/openapi.json)
+
+## Available Endpoints
+
+| Method | Path | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/manifest` | Yes | Account metadata and key capabilities |
+| `GET` | `/openapi.json` | No | OpenAPI 3.x contract (public) |
+| `GET` | `/markets` | Yes | List of available markets |
+| `GET` | `/events/{eventTicker}` | Yes | Single event with metadata |
+| `GET` | `/forecasts` | Yes | Paginated list of issued forecasts |
+| `GET` | `/forecasts/{forecastId}` | Yes | Single forecast detail with provenance |
+| `GET` | `/grades` | Yes | Paginated list of graded outcomes |
+| `GET` | `/model-history` | Yes | Model version and calibration history |
+| `GET` | `/download` | Yes | Bulk JSON or CSV export |
+
+## Where to Go Next
+
+<CardGroup cols={2}>
+  <Card title="Request API Access" icon="key" href="api-guide/access">
+    Learn the three-step concierge onboarding process — contact, license, and key delivery.
+  </Card>
+  <Card title="Authentication" icon="lock" href="api-guide/authentication">
+    Pass your Bearer token correctly and handle 401 and 429 error responses.
+  </Card>
+  <Card title="Pagination" icon="arrow-right" href="api-guide/pagination">
+    Traverse large result sets with opaque cursors and control page size with the limit param.
+  </Card>
+  <Card title="API Quickstart" icon="bolt" href="guides/quickstart-api">
+    Make your first authenticated request and read a forecast object in under five minutes.
+  </Card>
+</CardGroup>

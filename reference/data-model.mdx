@@ -1,0 +1,262 @@
+---
+title: "Fade API Data Model: Full Objects and Field Reference"
+sidebarTitle: "Data Model"
+description: "Complete reference for every object and field returned by the Fade API, including Market, Forecast, ContractEvidence, Grade, FamilyHistory, and Error."
+---
+
+The Fade API returns a consistent set of typed objects across all endpoints. Every response wraps data in a predictable envelope, and every field is either a typed value or an explicit `null` — the API never substitutes zeros, empty strings, or sentinel values in place of missing data.
+
+<Note>
+  All datetime fields are expressed as **UTC ISO-8601** strings (e.g., `2024-11-15T18:30:00Z`). When a datetime value is absent or unknown, the field is returned as an explicit `null` — never as a zero, epoch timestamp, or empty string.
+</Note>
+
+---
+
+## Market
+
+A **Market** represents a tradeable contract venue and its associated metadata. Markets are the top-level anchors that link Fade forecasts to specific venues and event identifiers.
+
+<ResponseField name="market_id" type="uuid" required>
+  Unique identifier for the market. Use this to retrieve forecasts or grades associated with a specific market.
+</ResponseField>
+
+<ResponseField name="venue" type="string" required>
+  The name of the venue or exchange where this market is listed (e.g., `"kalshi"`, `"polymarket"`). This is a navigational reference — see [Licensing](/reference/licensing) for usage constraints.
+</ResponseField>
+
+<ResponseField name="venue_market_id" type="string" required>
+  The market's native identifier within the venue. Combined with `venue`, this uniquely identifies the contract on the originating exchange.
+</ResponseField>
+
+<ResponseField name="event_ticker" type="string | null">
+  The venue's event-level ticker symbol, if applicable. Some venues group markets under parent events; this field carries that grouping key. Returns `null` when the venue does not expose event-level tickers.
+</ResponseField>
+
+<ResponseField name="sport" type="string | null">
+  The sport associated with this market (e.g., `"NFL"`, `"NBA"`, `"MLB"`). Returns `null` when the sport cannot be reliably determined from available data.
+</ResponseField>
+
+<ResponseField name="family" type="string | null">
+  The proposition family this market belongs to — a logical grouping of structurally similar contracts (e.g., player props of the same type). Returns `null` when no family classification has been assigned.
+</ResponseField>
+
+<ResponseField name="series" type="string" required>
+  The series identifier for this market. Series group markets across time or competition segments (e.g., a full season's worth of a recurring prop type).
+</ResponseField>
+
+<ResponseField name="contract_rules_hash" type="string | null">
+  A SHA-256 hash of the contract's grading rules as recorded at forecast issuance time. Used to verify rule stability across forecasts. Returns `null` when rules could not be captured.
+</ResponseField>
+
+<ResponseField name="official_venue_url" type="string | null">
+  The canonical URL for this market on the originating venue's website, if available. Provided as a navigational convenience; subject to change by the venue at any time. Returns `null` when no URL is known.
+</ResponseField>
+
+---
+
+## Forecast
+
+A **Forecast** is the core output of the Fade Reality Engine. It expresses the model's probability estimate (`p_yes`) for a binary proposition, along with full provenance metadata — which model produced it, what inputs it used, and when it was issued.
+
+<Note>
+  A `null` value for `issued_at` means the issuance timing is **UNKNOWN** — not that the forecast was never issued. The forecast record exists and `p_yes` is valid; the timestamp simply could not be determined from available evidence.
+</Note>
+
+<ResponseField name="forecast_id" type="uuid" required>
+  Unique identifier for this forecast. Use this to retrieve a specific forecast's detail, including its embedded `ContractEvidence`.
+</ResponseField>
+
+<ResponseField name="proposition_id" type="string" required>
+  A stable identifier for the underlying proposition being forecast, independent of venue or market mapping. Allows you to track a proposition across model versions or venue migrations.
+</ResponseField>
+
+<ResponseField name="market_id" type="uuid" required>
+  The `market_id` of the associated Market object. Join on this field to retrieve venue and contract metadata.
+</ResponseField>
+
+<ResponseField name="family" type="string | null">
+  The proposition family for this forecast. Matches the `family` field on the parent Market when assigned. Returns `null` when no family classification applies.
+</ResponseField>
+
+<ResponseField name="threshold" type="number | null">
+  The numeric threshold value that defines the boundary of the Yes outcome (e.g., `24.5` for a points prop). Returns `null` for binary propositions that do not have a numeric cutoff.
+</ResponseField>
+
+<ResponseField name="operator" type="string | null">
+  The comparison operator applied to `threshold` (e.g., `">"`, `">="`, `"<"`). Read together, `operator` + `threshold` fully describe the Yes resolution condition. Returns `null` when `threshold` is also `null`.
+</ResponseField>
+
+<ResponseField name="p_yes" type="number" required>
+  The model's probability estimate that the proposition resolves **Yes**, expressed as a decimal between `0` and `1` (inclusive). This is the primary analytical output of the Reality Engine.
+</ResponseField>
+
+<ResponseField name="model_id" type="string" required>
+  Identifies the model family that produced this forecast (e.g., `"reality-engine-v2"`). Use alongside `model_version` to fully qualify the producing model.
+</ResponseField>
+
+<ResponseField name="model_version" type="string" required>
+  The specific version string of the model that produced this forecast. Enables reproducibility audits and version-stratified performance analysis.
+</ResponseField>
+
+<ResponseField name="inputs_hash" type="string" required>
+  A deterministic hash of the input feature set used to produce this forecast. Two forecasts with identical `inputs_hash` values were produced from the same input data.
+</ResponseField>
+
+<ResponseField name="inputs_as_of" type="datetime | null">
+  The timestamp of the most recent input data used by the model. Reflects data freshness, not model execution time. Returns `null` when input timestamps are unavailable.
+</ResponseField>
+
+<ResponseField name="issued_at" type="datetime | null">
+  The timestamp at which this forecast was issued. Returns `null` when the issuance time is **UNKNOWN** — the forecast still exists and `p_yes` remains valid. See the Note above.
+</ResponseField>
+
+<ResponseField name="scheduled_start_utc" type="datetime | null">
+  The scheduled UTC start time of the underlying event. Returns `null` when the event start time has not been confirmed or cannot be determined.
+</ResponseField>
+
+<ResponseField name="issuance_evidence_source" type="string | null">
+  Identifies the source used to establish the issuance timestamp (e.g., `"venue_snapshot"`, `"order_book_event"`). Returns `null` when no issuance evidence is available.
+</ResponseField>
+
+<ResponseField name="issuance_evidence_source_id" type="string | null">
+  The specific identifier within `issuance_evidence_source` that anchors the issuance timestamp. Returns `null` when `issuance_evidence_source` is also `null`.
+</ResponseField>
+
+<ResponseField name="snapshot_id" type="string | null">
+  A provenance reference linking this forecast to the data snapshot from which it was derived. This is a **read-only provenance field** — it is not a stable foreign key for querying. Returns `null` when no snapshot linkage is recorded.
+</ResponseField>
+
+<ResponseField name="venue" type="string | null">
+  The venue name, denormalized from the parent Market for convenience. Returns `null` on list endpoints where venue context is implicit.
+</ResponseField>
+
+<ResponseField name="venue_market_id" type="string" required>
+  The venue's native market identifier, denormalized from the parent Market for convenience.
+</ResponseField>
+
+<ResponseField name="event_ticker" type="string | null">
+  The venue's event-level ticker, denormalized from the parent Market. Returns `null` when not applicable.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | null">
+  The timestamp at which this forecast record was written to the Fade database. Distinct from `issued_at` — a forecast may be ingested into the database after its original issuance time. Returns `null` in rare cases where the write timestamp was not captured.
+</ResponseField>
+
+### ContractEvidence (Forecast Detail Only)
+
+When you retrieve a single forecast by ID, the response includes a nested `contract_evidence` object. This object carries the cryptographic provenance record that anchors the forecast to a specific version of the contract's grading rules.
+
+<Expandable title="contract_evidence fields">
+  <ResponseField name="market_rules_hash" type="string" required>
+    A hash of the full market rules document as captured at forecast issuance time. Matches the `contract_rules_hash` on the parent Market when rules were stable.
+  </ResponseField>
+
+  <ResponseField name="family_doc_sha256" type="string | null">
+    SHA-256 hash of the proposition family document used during forecast issuance. Returns `null` when no family document was available.
+  </ResponseField>
+
+  <ResponseField name="family_doc_source_url" type="string | null">
+    The URL from which the family document was fetched. Returns `null` when `family_doc_sha256` is also `null`.
+  </ResponseField>
+
+  <ResponseField name="rulebook_sha256" type="string | null">
+    SHA-256 hash of the venue's rulebook document as captured at issuance time. Returns `null` when no rulebook was captured.
+  </ResponseField>
+
+  <ResponseField name="rulebook_source_url" type="string | null">
+    The URL from which the rulebook was fetched. Returns `null` when `rulebook_sha256` is also `null`.
+  </ResponseField>
+
+  <ResponseField name="product_family" type="string | null">
+    The product family classification recorded in the evidence capture. May differ from the Forecast-level `family` field when classification was refined after capture. Returns `null` when not recorded.
+  </ResponseField>
+
+  <ResponseField name="captured_at" type="datetime | null">
+    The timestamp at which this evidence snapshot was taken. Returns `null` when the capture time was not recorded.
+  </ResponseField>
+</Expandable>
+
+---
+
+## Grade
+
+A **Grade** records the resolution outcome for a forecast once the underlying event has concluded. Grades are the basis for all historical performance metrics in the Fade system.
+
+<ResponseField name="forecast_id" type="uuid" required>
+  The `forecast_id` of the forecast being graded. One-to-one relationship with a Forecast record.
+</ResponseField>
+
+<ResponseField name="family" type="string | null">
+  The proposition family associated with this grade. Included for convenient filtering without a join to the Forecast object. Returns `null` when the forecast had no family assignment.
+</ResponseField>
+
+<ResponseField name="outcome" type="integer | null">
+  The binary resolution result: `1` if the proposition resolved **Yes**, `0` if it resolved **No`. Returns `null` when `grading_status` is not `"graded"`.
+</ResponseField>
+
+<ResponseField name="grading_status" type="string" required>
+  The current grading state of this forecast. One of:
+
+  - `"pending"` — the event has not yet concluded or grading has not been processed.
+  - `"graded"` — a definitive outcome has been recorded; `outcome` will be `0` or `1`.
+  - `"void"` — the contract was voided (e.g., event cancelled, no action); excluded from performance calculations.
+  - `"unavailable"` — grading data could not be obtained; excluded from performance calculations.
+</ResponseField>
+
+<ResponseField name="graded_at" type="datetime | null">
+  The timestamp at which the grade was finalized. Returns `null` when `grading_status` is `"pending"`.
+</ResponseField>
+
+---
+
+## FamilyHistory
+
+A **FamilyHistory** record provides aggregate calibration and performance statistics for a proposition family over a defined ledger scope. Use these records to evaluate the Reality Engine's track record on specific proposition types.
+
+<ResponseField name="family" type="string" required>
+  The proposition family identifier for which this history is computed.
+</ResponseField>
+
+<ResponseField name="graded_count" type="integer" required>
+  The total number of graded (non-void, non-unavailable) forecasts included in this history record.
+</ResponseField>
+
+<ResponseField name="expected_wins" type="number" required>
+  The sum of `p_yes` values across all graded forecasts in the scope — the model's aggregate predicted win count. Compare to `actual_wins` to assess calibration direction.
+</ResponseField>
+
+<ResponseField name="actual_wins" type="integer" required>
+  The number of forecasts in the scope that resolved with `outcome = 1` (Yes). The raw empirical count.
+</ResponseField>
+
+<ResponseField name="brier" type="number | null">
+  The mean Brier score across all graded forecasts in the scope. Lower values indicate better probabilistic accuracy. Computed as the mean of `(p_yes - outcome)²`. Returns `null` when `graded_count` is zero.
+</ResponseField>
+
+<ResponseField name="ledger_scope" type="string" required>
+  The time or competition scope over which this history is computed (e.g., `"2024-NFL-season"`, `"all-time"`). Scope definitions are stable across API versions.
+</ResponseField>
+
+---
+
+## Error
+
+All API errors are returned in a consistent envelope regardless of HTTP status code. Never rely solely on the HTTP status — always read the `error` object for actionable detail.
+
+<ResponseField name="error" type="object" required>
+  The error detail container.
+
+  <Expandable title="error fields">
+    <ResponseField name="error.code" type="string" required>
+      A stable machine-readable error code (e.g., `"rate_limit_exceeded"`, `"unauthorized"`, `"validation_error"`). Safe to programmatically branch on; codes do not change across patch versions.
+    </ResponseField>
+
+    <ResponseField name="error.message" type="string" required>
+      A human-readable description of the error. Intended for logging and debugging; do not parse this string programmatically as its wording may change.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="api_version" type="string" required>
+  Always `"1"`. Present on every response, including errors, to confirm which API contract governs the response shape.
+</ResponseField>

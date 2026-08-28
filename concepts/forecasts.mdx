@@ -1,0 +1,122 @@
+---
+title: "Understanding Fade Forecast Probabilities and p_yes"
+sidebarTitle: "Forecasts"
+description: "Learn what a Fade forecast is, how to interpret p_yes, threshold, operator, and issued_at, and why forecasts are immutable once issued."
+---
+
+A Fade forecast is a single probability estimate — expressed as `p_yes` — tied to an exact proposition contract, a specific model version, and a precise issuance timestamp. Every forecast captures the model's belief, as of a known moment in time, that a given proposition will resolve YES. Because each forecast is pinned to an `inputs_hash` and a `model_version`, you can reproduce the context in which it was issued and audit it later without ambiguity.
+
+## What p_yes Means
+
+`p_yes` is a number between 0 and 1 (inclusive) representing the model's probability that the proposition resolves YES. A value of `0.72` means the model assigns a 72% chance of a YES outcome. You should treat this as a calibrated probability, not a confidence score — Fade's model history tracks Brier scores and actual win rates so you can verify calibration over time.
+
+## Reading threshold and operator
+
+Many propositions are numeric — for example, "Will a player score more than 8.5 points?" Fade encodes these with two fields:
+
+- **`threshold`** — the numeric line (e.g., `8.5`)
+- **`operator`** — the direction of the proposition (e.g., `"over"` or `"under"`)
+
+Together they define the exact contract. A forecast with `threshold: 8.5` and `operator: "over"` means the proposition is *"will the value exceed 8.5?"* When either field is not applicable to the proposition type, both are `null`.
+
+## issued_at and UNKNOWN Issuance
+
+`issued_at` records when the model emitted the forecast. A `null` value does **not** mean the forecast is missing or invalid — it means the issuance timestamp is **UNKNOWN**. This can occur when a forecast was ingested from a source that did not preserve a reliable emission time. Use `created_at` to see when the record entered Fade's system, but treat `issued_at: null` as an explicit signal of unknown provenance rather than a missing field.
+
+## inputs_hash
+
+`inputs_hash` is a deterministic fingerprint of all model inputs used to produce the forecast. It lets you group forecasts that were generated from the same feature snapshot, identify when the model re-ran on updated inputs, and verify that two forecasts with different `p_yes` values genuinely saw different data.
+
+## snapshot_id
+
+`snapshot_id` is a **provenance reference only**. It links the forecast back to the internal data snapshot the model consumed, but the snapshot's contents are never redistributed through the API. Use `snapshot_id` for internal lineage tracking and audit trails; do not expect to retrieve raw snapshot data through this field.
+
+## Forecast Immutability
+
+Once a forecast is issued it is **immutable**. Fade never modifies `p_yes`, `model_id`, `model_version`, `inputs_hash`, or any other field on an existing forecast record. If the model produces a new estimate for the same proposition, a new forecast object is created with a new `forecast_id`. This design lets you build audit-safe pipelines without worrying about silent data changes.
+
+<Note>
+  Venue prices, bids, asks, and market state are **never** included in forecast objects. Fade is an analytics platform — forecast objects reflect model outputs only, not market or trading data.
+</Note>
+
+## Forecast Object Fields
+
+<ResponseField name="forecast_id" type="uuid" required>
+  Unique identifier for this forecast. Immutable after issuance.
+</ResponseField>
+
+<ResponseField name="proposition_id" type="string" required>
+  Identifier of the proposition this forecast targets.
+</ResponseField>
+
+<ResponseField name="market_id" type="uuid" required>
+  Identifier of the market the proposition belongs to.
+</ResponseField>
+
+<ResponseField name="family" type="string | null">
+  Proposition family (e.g., a sport or stat category). Used for model-history aggregation. `null` when not assigned.
+</ResponseField>
+
+<ResponseField name="threshold" type="number | null">
+  The numeric line for the proposition (e.g., `8.5`). `null` for non-numeric proposition types.
+</ResponseField>
+
+<ResponseField name="operator" type="string | null">
+  Direction of the numeric proposition: `"over"` or `"under"`. `null` when `threshold` is `null`.
+</ResponseField>
+
+<ResponseField name="p_yes" type="number" required>
+  Model probability that the proposition resolves YES. Always in the range `[0, 1]`.
+</ResponseField>
+
+<ResponseField name="model_id" type="string" required>
+  Identifier of the model that produced this forecast.
+</ResponseField>
+
+<ResponseField name="model_version" type="string" required>
+  Version string of the model at the time of issuance. Together with `model_id`, uniquely identifies the model artifact.
+</ResponseField>
+
+<ResponseField name="inputs_hash" type="string" required>
+  Deterministic fingerprint of the feature inputs the model consumed. Identical hashes mean identical inputs.
+</ResponseField>
+
+<ResponseField name="inputs_as_of" type="datetime | null">
+  UTC timestamp indicating the effective date of the input data. `null` when the input timestamp is unavailable.
+</ResponseField>
+
+<ResponseField name="issued_at" type="datetime | null">
+  UTC timestamp when the model emitted the forecast. `null` means UNKNOWN — the record was ingested without a reliable emission time.
+</ResponseField>
+
+<ResponseField name="scheduled_start_utc" type="datetime | null">
+  UTC timestamp of the scheduled event start. `null` when the schedule is unavailable at issuance time.
+</ResponseField>
+
+<ResponseField name="issuance_evidence_source" type="string | null">
+  Name of the external source that confirmed or triggered issuance. `null` when not applicable.
+</ResponseField>
+
+<ResponseField name="issuance_evidence_source_id" type="string | null">
+  Identifier within `issuance_evidence_source` that corresponds to this forecast's issuance event. `null` when not applicable.
+</ResponseField>
+
+<ResponseField name="snapshot_id" type="string | null">
+  Internal provenance reference to the data snapshot consumed by the model. Not a retrievable resource; included for audit lineage only.
+</ResponseField>
+
+<ResponseField name="venue" type="string | null">
+  Name of the venue or exchange where the proposition is listed. `null` when not applicable.
+</ResponseField>
+
+<ResponseField name="venue_market_id" type="string" required>
+  Identifier used by the venue to reference this market.
+</ResponseField>
+
+<ResponseField name="event_ticker" type="string | null">
+  Human-readable ticker for the event (e.g., `"NBA_LAL_GSW_20250115"`). `null` when not assigned.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime | null">
+  UTC timestamp when this forecast record was written to Fade's database. Distinct from `issued_at`.
+</ResponseField>

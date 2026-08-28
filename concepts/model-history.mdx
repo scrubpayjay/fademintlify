@@ -1,0 +1,81 @@
+---
+title: "Model History: Calibration and Performance Metrics"
+sidebarTitle: "Model History"
+description: "Explore per-family model performance aggregates, Brier score calibration, expected wins, and how to query model history from the Fade API."
+---
+
+Model history gives you a per-family view of how Fade's models have performed across all graded propositions. Rather than inspecting individual forecasts, model history aggregates them into a concise scorecard: how many propositions were graded, how many wins the model expected given its probability estimates, how many actually resolved YES, and a Brier score measuring overall calibration quality. Use model history to evaluate model reliability before acting on individual forecasts, and to track performance trends over time as new model versions are deployed.
+
+## FamilyHistory Fields
+
+<ResponseField name="family" type="string" required>
+  The proposition family this aggregate covers (e.g., a sport or stat category). Families are never mixed in a single `FamilyHistory` record — each record covers exactly one family.
+</ResponseField>
+
+<ResponseField name="graded_count" type="integer" required>
+  The total number of graded propositions included in this aggregate. This count includes both wins (`outcome: 1`) and misses (`outcome: 0`) — it always reflects the full distribution.
+</ResponseField>
+
+<ResponseField name="expected_wins" type="number" required>
+  The sum of `p_yes` across all graded rows in this family. This is what a perfectly calibrated model would win on average: if the model assigns `p_yes = 0.7` to 100 propositions, `expected_wins` would be `70`. Comparing `expected_wins` to `actual_wins` is a quick sanity check for systematic over- or under-confidence.
+</ResponseField>
+
+<ResponseField name="actual_wins" type="integer" required>
+  The count of graded propositions that resolved YES (`outcome: 1`). Compare this to `expected_wins` to detect calibration drift.
+</ResponseField>
+
+<ResponseField name="brier" type="number | null">
+  The mean Brier score across all graded rows in this family. Lower is better; `0.0` is a perfect score. `null` when there are no graded records available to compute it.
+</ResponseField>
+
+<ResponseField name="ledger_scope" type="string" required>
+  Describes the time window or scope of this history aggregate (e.g., `"all_time"` or a specific date range string). Use this field to understand whether you are looking at lifetime performance or a rolling window.
+</ResponseField>
+
+## What the Brier Score Tells You
+
+The Brier score is the mean squared error between `p_yes` and the binary outcome for each graded proposition:
+
+```
+Brier = (1 / N) × Σ (p_yes_i − outcome_i)²
+```
+
+A score of `0.0` is perfect — every probability matched the outcome exactly. A score of `0.25` is the baseline you would achieve by predicting `0.5` on every proposition regardless of information. The lower the Brier score, the better the model's probability calibration.
+
+<Tip>
+  Track the Brier score for each family across multiple model versions to evaluate whether a new model deployment improved or regressed calibration. A rising Brier score within the same family signals that the model is becoming less well-calibrated — worth investigating before relying on its forecasts for analysis.
+</Tip>
+
+## Why Families Are Never Mixed
+
+Each proposition family has its own base rates, feature distributions, and model versions. Aggregating across families would conflate, for example, a model that is highly calibrated for one sport with one that performs poorly in another — producing a Brier score and expected-win figure that accurately describes neither. Fade enforces family separation in all model-history aggregates so every metric you see is meaningful within a consistent domain.
+
+## expected_wins as a Calibration Signal
+
+`expected_wins` is the sum of `p_yes` over all graded rows — the aggregate number of wins a perfectly calibrated model would predict given those probabilities. If `expected_wins` is significantly higher than `actual_wins`, the model is systematically over-confident. If it is lower, the model is under-confident. Use the ratio `actual_wins / expected_wins` alongside the Brier score for a quick calibration sanity check.
+
+## Filtering by Family
+
+Pass the `family` query parameter to scope model history to a specific proposition family. Without this filter, the API returns one `FamilyHistory` record per family that has at least one graded forecast.
+
+```bash
+# Fetch model history for a specific family
+curl https://fade.sportshack.ai/api/v1/model-history \
+  --get \
+  --data-urlencode "family=nba_player_points" \
+  -H "Authorization: Bearer fade_live_..."
+```
+
+To retrieve history for all families at once, omit the `family` parameter:
+
+```bash
+# Fetch model history for all families
+curl https://fade.sportshack.ai/api/v1/model-history \
+  -H "Authorization: Bearer fade_live_..."
+```
+
+The response is an array of `FamilyHistory` objects. Each object represents one family and is independent — you can safely compare Brier scores across families as long as you keep in mind that different families have different inherent difficulty levels and base rates.
+
+<Note>
+  Model history aggregates are computed over **graded** records only. Pending, void, and unavailable forecasts are excluded. This means `graded_count`, `expected_wins`, `actual_wins`, and `brier` all reflect only propositions with confirmed outcomes — giving you a clean, unambiguous performance picture.
+</Note>

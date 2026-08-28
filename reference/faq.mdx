@@ -1,0 +1,119 @@
+---
+title: "Fade API: Frequently Asked Questions About the Platform"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about the Fade platform, the Reality Engine, API access, pricing, p_yes, licensing, error handling, and model performance."
+---
+
+The questions below cover the topics that come up most often when teams first start working with Fade. If you don't find what you're looking for here, reach out to Sportshack at **sportshackdfs@gmail.com** and someone will get back to you directly.
+
+<AccordionGroup>
+
+  <Accordion title="What is Fade, and what is the Reality Engine?">
+    **Fade** is Sportshack's sports probability analytics platform. It ingests structured data about sporting events and uses a suite of purpose-built models — collectively referred to as the **Reality Engine** — to produce calibrated probability estimates for binary propositions such as player props and game-outcome contracts.
+
+    The Reality Engine is not a single model but a versioned, family-specific modeling system. Different proposition families (e.g., NFL passing yards, NBA points) may be handled by distinct model configurations, each tracked by a `model_id` and `model_version` in every forecast record. The platform is designed for research and analytical use — Fade produces probabilities; it does not facilitate or recommend any transaction.
+  </Accordion>
+
+  <Accordion title="Is Fade a sports betting service?">
+    No. Sportshack is an **analytics-only company**. Fade produces probabilistic forecasts of sporting event outcomes — it does not accept wagers, place bets, manage accounts on any exchange, or provide recommendations to transact. Sportshack holds no wagering license and operates no gambling platform.
+
+    Fade forecasts are analytical information intended to support your own independent research and decision-making. How you use that information is entirely your responsibility under your own applicable legal and regulatory framework.
+  </Accordion>
+
+  <Accordion title="How do I get a Sportshack account?">
+    Send an email to **sportshackdfs@gmail.com** to start the onboarding process. Describe your use case briefly — what sport(s) you're interested in, what kind of analysis you plan to do, and whether you need internal-use access or have redistribution requirements. A member of the Sportshack team will walk you through account setup, subscription options, and API key issuance.
+  </Accordion>
+
+  <Accordion title="How do I get API access?">
+    API access is included with any active Quant Partner subscription. Once your account is set up, Sportshack will issue you an API key tied to your account. Pass the key in the `Authorization` header of every request:
+
+    ```http
+    Authorization: Bearer YOUR_API_KEY
+    ```
+
+    If you need multiple keys — for example, one per environment (development, staging, production) — contact Sportshack. Keys are independently rate-limited and independently revocable, so you can rotate them safely without disrupting other integrations.
+  </Accordion>
+
+  <Accordion title="How much does the Quant Partner API cost?">
+    The Quant Partner API is available at two price points for **internal analytical use**:
+
+    - **$1,500 / month** — rolling monthly access, cancel any time.
+    - **$5,000 / season** — covers a defined competitive season for a given sport; best value for seasonal analysis workflows.
+
+    Both tiers grant the same API access and default rate limit (120 requests/key/minute). Publisher and redistribution licenses for external use cases are priced separately — contact Sportshack at **sportshackdfs@gmail.com** with the subject **"Sportshack Publisher License"** to discuss terms.
+  </Accordion>
+
+  <Accordion title="What sports does Fade cover?">
+    Fade currently covers major US professional sports leagues. Coverage is organized by proposition family — each family maps to a specific type of contract (e.g., quarterback passing yards over/under) within a sport.
+
+    To see which families and series are currently active, query the manifest endpoint after authenticating. The manifest lists all available series, which you can filter by the `sport` field on associated Market objects. Coverage expands over time as new model families are added; your subscription automatically includes any newly released families.
+  </Accordion>
+
+  <Accordion title="What does p_yes mean?">
+    `p_yes` is the Reality Engine's probability estimate that a binary proposition resolves **Yes**. It is expressed as a decimal between `0` and `1`:
+
+    - `p_yes = 0.72` → the model believes there is a **72% chance** the proposition resolves Yes.
+    - `p_yes = 0.31` → the model believes there is a **31% chance** the proposition resolves Yes (equivalently, a 69% chance of No).
+
+    The Yes/No resolution condition is fully described by the `operator` and `threshold` fields on the Forecast object. For example, a forecast with `operator: ">"`, `threshold: 24.5`, and `p_yes: 0.61` means: "the model believes there is a 61% probability the subject exceeds 24.5 in the relevant stat."
+
+    `p_yes` is a calibrated probability, not a confidence score or a ranking. You can compare `p_yes` values across propositions and use them directly in expected-value calculations.
+  </Accordion>
+
+  <Accordion title="Why is issued_at sometimes null?">
+    A `null` value for `issued_at` means the issuance timestamp is **UNKNOWN** — it does not mean the forecast was never issued. The forecast record is real, `p_yes` is valid, and all other fields are populated normally.
+
+    Issuance timing is established from evidence sources such as venue snapshots or order-book events. In cases where that evidence is unavailable or ambiguous, Fade records the forecast but marks `issued_at` as `null` rather than imputing a timestamp. The `issuance_evidence_source` and `issuance_evidence_source_id` fields will also be `null` in these cases.
+
+    For time-sensitive analysis — such as measuring how far in advance a forecast was issued relative to game time — filter to forecasts where `issued_at` is non-null.
+  </Accordion>
+
+  <Accordion title="Can I redistribute or resell Fade API data?">
+    **Not without a separate written agreement.** Your standard Quant Partner subscription grants a license for **internal analytical use only**. Redistribution, resale, publication, or any form of external sharing of API responses — including `p_yes` values — requires a publisher license.
+
+    To inquire about publisher rights, email **sportshackdfs@gmail.com** with the subject line **"Sportshack Publisher License"** and a description of your intended use. See the [Licensing](/reference/licensing) page for full details on what is and is not included under the standard license.
+  </Accordion>
+
+  <Accordion title="What does a 422 error mean?">
+    An **HTTP 422** (Unprocessable Entity) response means the API understood your request but could not process it because one or more parameters failed validation. Common causes include:
+
+    - Passing a malformed UUID where a `forecast_id` or `market_id` is expected.
+    - Providing an unrecognized value for an enum parameter (e.g., an invalid `grading_status` filter).
+    - Omitting a required query parameter on an endpoint that requires it.
+    - Passing a date string that does not conform to ISO-8601 format.
+
+    The error response body will contain an `error.code` of `"validation_error"` and an `error.message` describing which parameter failed and why. Fix the request parameters based on that message and retry — a 422 is never resolved by retrying the same request unchanged.
+
+    ```json
+    {
+      "error": {
+        "code": "validation_error",
+        "message": "Parameter 'forecast_id' must be a valid UUID v4."
+      },
+      "api_version": "1"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="How do I handle rate limits (429 responses)?">
+    When you receive an **HTTP 429**, your request was not processed — you have exceeded the 120 requests/key/minute limit. The correct response is to **wait before retrying**, not to immediately resend.
+
+    Use **exponential backoff with jitter**: start with a 1-second delay, double it on each successive 429 (1s → 2s → 4s → 8s…), add random jitter of ±20–50% to avoid synchronized retries, and cap the maximum wait at around 60 seconds. After 4–5 failed attempts, surface an error to your application layer.
+
+    To avoid hitting the limit in the first place:
+    - Cache forecast responses locally and refresh at a cadence appropriate to your use case — most props do not require sub-second refresh rates.
+    - Use the list endpoints with filters rather than making individual detail requests in a tight loop.
+    - If you genuinely need more than 120 requests/minute, contact Sportshack to discuss a higher limit for your key.
+
+    See the [Rate Limits](/reference/rate-limits) page for a full code example and detailed guidance.
+  </Accordion>
+
+  <Accordion title="Why does the historical record include misses (incorrect forecasts)?">
+    Because **accurate probability reporting requires including all outcomes** — both correct and incorrect. A model that only showed you its wins would be useless for calibration.
+
+    Fade's `FamilyHistory` and `Grade` records include every graded forecast regardless of outcome. The `brier` score on `FamilyHistory` is computed across all outcomes: a low Brier score means the model's probabilities were well-calibrated over a large sample, not that every individual forecast was correct. Any probability model — including a perfectly calibrated one — will have roughly 30% of its 0.70 `p_yes` forecasts resolve No. Those are not errors; they are expected outcomes of probabilistic forecasting.
+
+    When evaluating Fade's track record, look at calibration curves and Brier scores across large sample sizes by family, not individual forecast outcomes. The `expected_wins` vs. `actual_wins` comparison on `FamilyHistory` is a quick sanity check: if those values are close, the model is well-calibrated in aggregate.
+  </Accordion>
+
+</AccordionGroup>

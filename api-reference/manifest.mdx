@@ -1,0 +1,95 @@
+---
+title: "GET /manifest — API Version, Families, and State"
+sidebarTitle: "GET /manifest"
+description: "Retrieve live API version, available prediction families, model versions, data freshness timestamps, and field licensing classifications for your key."
+---
+
+The `/manifest` endpoint returns a snapshot of the live production state Sportshack serves under your API key — including which prediction families are available, which model versions are active, the freshest forecast and grade timestamps, and the licensing classification for every field in the API. Unlike `/openapi.json`, this endpoint **requires authentication** because it reports account-scoped, production-state information rather than a static schema contract. Sportshack recommends making this call first on every session startup to verify key health and confirm which families are available before querying forecasts or grades.
+
+<Note>
+  Calling `GET /manifest` is the fastest way to confirm your key is active and discover which prediction families are currently available on your account. A `200 OK` response means your key is valid; a `401` means it is missing, malformed, or not yet activated.
+</Note>
+
+## Request
+
+```bash
+curl -s https://fade.sportshack.ai/api/v1/manifest \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+## Response Fields
+
+<ResponseField name="api_version" type="string">
+  Always `"1"`. Included on every response envelope from the API.
+</ResponseField>
+
+<ResponseField name="product" type="string">
+  The licensed product name, for example `"Quant Partner API"`. Use this to confirm you are pointed at the correct product tier.
+</ResponseField>
+
+<ResponseField name="families" type="string[]">
+  Array of prediction family identifiers available under your key, for example `["nfl_spreads", "nba_totals"]`. Only families with at least one current forecast are returned. Use these values when filtering `/forecasts`, `/grades`, or `/download`.
+</ResponseField>
+
+<ResponseField name="model_versions" type="object[]">
+  Array of active model descriptors. Each entry identifies a unique (model_id, model_version) pair that has issued at least one non-superseded forecast.
+
+  <Expandable title="model_versions item fields">
+    <ResponseField name="model_id" type="string">
+      Stable identifier for the model, for example `"reality-engine-v3"`. Matches the `model_id` field on Forecast objects.
+    </ResponseField>
+    <ResponseField name="model_version" type="string">
+      Semantic version string for this model release, for example `"3.4.1"`. Matches the `model_version` field on Forecast objects.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data_timestamps" type="object">
+  Freshness indicators showing when the most recent data was written to the live feed.
+
+  <Expandable title="data_timestamps fields">
+    <ResponseField name="latest_forecast_created_at" type="datetime | null">
+      UTC ISO-8601 timestamp of the most recently created forecast record. `null` if no forecasts have been issued yet under this key.
+    </ResponseField>
+    <ResponseField name="latest_graded_at" type="datetime | null">
+      UTC ISO-8601 timestamp of the most recent grade event. `null` if no forecasts have been graded yet.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="retention_policy" type="string">
+  Human-readable description of how long historical records are retained in the live API, for example `"Rolling 24 months"`.
+</ResponseField>
+
+<ResponseField name="latency_policy" type="string">
+  Human-readable description of the expected delay between a forecast being issued and its appearance in the API feed, for example `"Typically under 60 seconds after issuance"`.
+</ResponseField>
+
+<ResponseField name="field_licensing" type="object">
+  Map of field names to their licensing classification string. Use this to understand which fields are covered by the standard analytical license versus those that would require a publisher agreement. Keys are field names as they appear in API response objects; values are classification labels such as `"analytical"` or `"publisher-required"`.
+</ResponseField>
+
+## Sample Response
+
+```json
+{
+  "api_version": "1",
+  "product": "Quant Partner API",
+  "families": ["nfl_spreads", "nfl_totals", "nba_spreads"],
+  "model_versions": [
+    { "model_id": "reality-engine-v3", "model_version": "3.4.1" }
+  ],
+  "data_timestamps": {
+    "latest_forecast_created_at": "2025-09-14T18:32:05Z",
+    "latest_graded_at": "2025-09-14T03:15:44Z"
+  },
+  "retention_policy": "Rolling 24 months",
+  "latency_policy": "Typically under 60 seconds after issuance",
+  "field_licensing": {
+    "p_yes": "analytical",
+    "model_id": "analytical",
+    "venue_market_id": "analytical",
+    "official_venue_url": "analytical"
+  }
+}
+```

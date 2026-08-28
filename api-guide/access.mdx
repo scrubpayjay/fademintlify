@@ -1,0 +1,56 @@
+---
+title: "Request and Activate Your Fade Quant Partner API Key"
+sidebarTitle: "Access"
+description: "Follow the three-step concierge onboarding process to license, pay for, and receive your Fade Quant Partner API key from Sportshack."
+---
+
+Access to the Quant Partner API is granted through a concierge onboarding process — there is no self-serve sign-up flow. Sportshack reviews each request individually to confirm intended use, issue the right license tier, and deliver a customer-named key through a secure channel. The three steps below cover everything you need to go from inquiry to your first authenticated request.
+
+<Note>
+  Each API key is independently rate-limited and independently revocable. If your team needs multiple keys — for example, to isolate production and development traffic — mention that during the contact step and Sportshack will provision them separately.
+</Note>
+
+## Onboarding Steps
+
+<Steps>
+  <Step title="Contact Sportshack">
+    Send an email to [sportshackdfs@gmail.com](mailto:sportshackdfs@gmail.com) with the subject line **"Quant Partner API Access Request"**. Include the following in your message:
+
+    - Your full name
+    - Company or organization name
+    - Work email address
+    - Intended internal use (for example: "backtesting model calibration" or "daily forecast dashboard")
+    - Preferred license term: **monthly** ($1,500/month) or **seasonal** ($5,000/season)
+    - Expected request volume per day or per minute, if known
+
+    Sportshack will respond to confirm eligibility and provide next steps for payment. You do not need an existing Sportshack account to apply.
+  </Step>
+  <Step title="Complete Licensing and Payment">
+    Once Sportshack confirms your request, you will receive either a **Stripe Payment Link** or an **invoice** depending on your preference. Pricing is:
+
+    | Term | Price |
+    |---|---|
+    | Monthly | $1,500 / month |
+    | Seasonal | $5,000 / season |
+
+    Payment covers internal analytical use of the Fade probability feed. It does **not** automatically create or activate an API key — Sportshack provisions keys manually after payment is confirmed, which allows each key to be named, scoped, and rate-limited to your account specifically.
+  </Step>
+  <Step title="Receive and Verify Your Key">
+    After payment is confirmed, Sportshack delivers your API key **once** through a secure channel. The key name will reflect your account or organization so you can identify it in logs and support requests.
+
+    To verify activation, make a request to `GET /api/v1/manifest` with your key in the `Authorization` header. Sportshack monitors for this first authenticated request as part of the activation handshake.
+
+    ```bash
+    curl -s https://fade.sportshack.ai/api/v1/manifest \
+      -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+    ```
+
+    A `200 OK` response confirms your key is active and your account is ready. If you receive a `401`, contact [sportshackdfs@gmail.com](mailto:sportshackdfs@gmail.com) — the key may still be in the provisioning queue.
+
+    Store your key in a secrets manager or environment variable immediately. Sportshack stores only a **hash** of your key server-side and cannot retrieve the plaintext value after delivery.
+  </Step>
+</Steps>
+
+<Tip>
+  If you need **publisher or redistribution rights** — for example, to embed Fade probability data in a product or service delivered to third parties — that requires a separate written agreement beyond the standard analytical license. Contact [sportshackdfs@gmail.com](mailto:sportshackdfs@gmail.com) with the subject **"Sportshack Publisher License"** to start that conversation.
+</Tip>

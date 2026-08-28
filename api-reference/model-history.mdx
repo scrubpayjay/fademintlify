@@ -1,0 +1,98 @@
+---
+title: "GET /model-history — Per-Family Model Performance"
+sidebarTitle: "GET /model-history"
+description: "Retrieve per-family model performance — graded count, expected wins, actual wins, and Brier score. Each family is always its own row; none are combined."
+---
+
+The `/model-history` endpoint returns pre-aggregated performance statistics for every prediction family Sportshack has graded records for. Each row covers one family in isolation — families are never combined or rolled up into a single aggregate row, which ensures you can assess calibration and accuracy independently for each proposition type. The key metrics are `graded_count` (the total number of graded forecasts), `expected_wins` (the sum of all `p_yes` values — what the model predicted in aggregate), `actual_wins` (the count of forecasts that resolved YES), and `brier` (the mean Brier score for the family). Use this endpoint as your first stop for assessing whether the model is well-calibrated before building your own analysis pipeline.
+
+<Tip>
+  This endpoint gives you instant model calibration insight without writing any aggregation logic yourself. Compare `expected_wins` to `actual_wins` for a directional calibration check, and use the Brier score to compare performance across families or model versions over time.
+</Tip>
+
+## Query Parameters
+
+<ParamField query="family" type="string" optional>
+  Filter to a specific prediction family, for example `"nfl_spreads"`. Returns a single-row response for that family. Omit to return performance rows for all available families.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="api_version" type="string">
+  Always `"1"`.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Array of FamilyHistory objects, one per family. Returns an empty array if no graded records exist for the requested family.
+
+  <Expandable title="FamilyHistory object fields">
+    <ResponseField name="family" type="string">
+      The Sportshack prediction family identifier, for example `"nfl_spreads"` or `"nba_totals"`.
+    </ResponseField>
+    <ResponseField name="graded_count" type="integer">
+      Total number of forecasts that have been graded (status `"graded"`) for this family. Voided and unavailable forecasts are excluded.
+    </ResponseField>
+    <ResponseField name="expected_wins" type="number">
+      Sum of all `p_yes` values across graded forecasts for this family. Represents the aggregate number of YES resolutions the model predicted. Compare to `actual_wins` to assess over- or under-confidence.
+    </ResponseField>
+    <ResponseField name="actual_wins" type="integer">
+      Count of graded forecasts where `outcome = 1` (the YES side resolved). Compare to `expected_wins` to measure calibration direction.
+    </ResponseField>
+    <ResponseField name="brier" type="number | null">
+      Mean Brier score for this family, calculated as the average of `(p_yes - outcome)²` across all graded forecasts. Lower is better; `0` is a perfect score; `1` is the worst possible score. `null` if there are no graded records yet.
+    </ResponseField>
+    <ResponseField name="ledger_scope" type="string">
+      Description of the time range or data scope this performance row covers, for example `"all_time"` or `"rolling_90_days"`. Use this to understand what period the aggregated stats represent.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+**Retrieve performance for all families:**
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/model-history" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+**Retrieve performance for a single family:**
+
+```bash
+curl -s "https://fade.sportshack.ai/api/v1/model-history?family=nfl_spreads" \
+  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+```
+
+## Sample Response
+
+```json
+{
+  "api_version": "1",
+  "data": [
+    {
+      "family": "nfl_spreads",
+      "graded_count": 482,
+      "expected_wins": 268.4,
+      "actual_wins": 271,
+      "brier": 0.218,
+      "ledger_scope": "all_time"
+    },
+    {
+      "family": "nfl_totals",
+      "graded_count": 390,
+      "expected_wins": 201.7,
+      "actual_wins": 198,
+      "brier": 0.231,
+      "ledger_scope": "all_time"
+    },
+    {
+      "family": "nba_spreads",
+      "graded_count": 145,
+      "expected_wins": 78.9,
+      "actual_wins": 81,
+      "brier": 0.244,
+      "ledger_scope": "all_time"
+    }
+  ]
+}
+```
