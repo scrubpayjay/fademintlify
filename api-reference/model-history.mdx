@@ -1,6 +1,6 @@
 ---
 title: "GET /model-history — Per-Family Model Performance"
-sidebarTitle: "GET /model-history"
+sidebarTitle: "Model History"
 description: "Retrieve per-family model performance — graded count, expected wins, actual wins, and Brier score. Each family is always its own row; none are combined."
 ---
 
@@ -47,20 +47,24 @@ The `/model-history` endpoint returns pre-aggregated performance statistics for 
   </Expandable>
 </ResponseField>
 
+<ResponseField name="next_cursor" type="string | null">
+  Opaque cursor for the next page of results. `null` when you have reached the last page.
+</ResponseField>
+
 ## Examples
 
 **Retrieve performance for all families:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/model-history" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Retrieve performance for a single family:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/model-history?family=nfl_spreads" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 ## Sample Response
@@ -93,6 +97,7 @@ curl -s "https://fade.sportshack.ai/api/v1/model-history?family=nfl_spreads" \
       "brier": 0.244,
       "ledger_scope": "all_time"
     }
-  ]
+  ],
+  "next_cursor": null
 }
 ```

@@ -1,6 +1,6 @@
 ---
 title: "GET /events/{eventTicker} — Event and Market Ladder"
-sidebarTitle: "GET /events"
+sidebarTitle: "Events"
 description: "Retrieve a single event by its venue ticker and the full ladder of known markets under it, each flagged with whether a current Sportshack forecast exists."
 ---
 
@@ -84,7 +84,7 @@ The `/events/{eventTicker}` endpoint returns a single event record plus every ma
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/events/SUPERBOWL-LIX" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 ## Sample Response

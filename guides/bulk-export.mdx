@@ -1,5 +1,5 @@
 ---
-title: "Export Forecasts and Grades in Bulk with the Download Endpoint"
+title: "Bulk Export Forecasts and Grades via the Download Endpoint"
 sidebarTitle: "Bulk Export"
 description: "Use GET /api/v1/download to pull large datasets as JSON or CSV. Apply family and date filters to stay within the 50,000-row hard cap."
 ---
@@ -75,7 +75,7 @@ curl -s -H "Authorization: Bearer $FADE_API_KEY" \
 
     ```json
     {
-      "api_version": "1.0",
+      "api_version": 1,
       "dataset": "forecasts",
       "total_rows": 312,
       "data": [

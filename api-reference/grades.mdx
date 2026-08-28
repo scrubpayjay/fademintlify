@@ -1,7 +1,7 @@
 ---
 title: "GET /grades — Forecast Grading Status and Outcomes"
-sidebarTitle: "GET /grades"
-description: "Retrieve grading status and settled outcomes for all forecasts — pending, graded, voided, and unavailable — with misses always present alongside hits."
+sidebarTitle: "Grades"
+description: "Retrieve grading status and settled outcomes for all forecasts — pending, graded, void, and unavailable — with misses always present alongside hits."
 ---
 
 The `/grades` endpoint returns every current forecast paired with its grading status and, when the grading status is `"graded"`, the venue-settled binary outcome and the timestamp of that grading event. You can filter by `status`, `family`, `sport`, and `date` to narrow results to a specific slice of the graded record. Every grade record is returned regardless of outcome — misses (`outcome = 0`) are never suppressed and always appear alongside hits (`outcome = 1`). Treating misses as a filter target in your analysis pipeline will bias any calibration or accuracy calculation you perform.
@@ -79,21 +79,21 @@ The `/grades` endpoint returns every current forecast paired with its grading st
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/grades?status=graded" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Filter by family and date:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/grades?family=nfl_spreads&date=2025-09-14" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Check pending grades for a specific sport:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/grades?sport=nba&status=pending" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 ## Sample Response

@@ -1,6 +1,6 @@
 ---
 title: "GET /download — Bulk Export Forecasts or Grades"
-sidebarTitle: "GET /download"
+sidebarTitle: "Download"
 description: "Bulk-export forecasts or grades as a JSON or CSV file, capped at 50,000 rows. Requests over the cap return 422 — there is no silent truncation."
 ---
 
@@ -54,7 +54,7 @@ A successful `200` response returns a file attachment with the `Content-Disposit
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/download?dataset=forecasts&family=nfl_spreads&date=2025-09-14" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE" \
+  -H "Authorization: Bearer $FADE_API_KEY" \
   -o forecasts_nfl_spreads_20250914.json
 ```
 
@@ -62,7 +62,7 @@ curl -s "https://fade.sportshack.ai/api/v1/download?dataset=forecasts&family=nfl
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/download?dataset=grades&format=csv&family=nfl_spreads&date=2025-09-14" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE" \
+  -H "Authorization: Bearer $FADE_API_KEY" \
   -o grades_nfl_spreads_20250914.csv
 ```
 
@@ -70,7 +70,7 @@ curl -s "https://fade.sportshack.ai/api/v1/download?dataset=grades&format=csv&fa
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/download?dataset=forecasts&format=csv&family=nba_totals" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE" \
+  -H "Authorization: Bearer $FADE_API_KEY" \
   -o forecasts_nba_totals_all.csv
 ```
 

@@ -6,6 +6,10 @@ description: "Understand what the Fade Quant Partner API provides, what it exclu
 
 The Fade Quant Partner API gives licensed customers read-only programmatic access to Sportshack-issued sports probabilities, provenance records, contract evidence, and grades — the same signal surfaces available through the Reality Engine web app, delivered as a structured JSON feed you can integrate directly into your own analytical workflows. The API does not expose venue pricing, market state, or order book data of any kind, and your license covers internal analytical use only.
 
+<Warning>
+  Fade provides **analytical information for adults 21 and older**. All probability forecasts are research tools — they are not investment advice, financial advice, or a recommendation to place any wager. You are solely responsible for how you use this data.
+</Warning>
+
 ## What the API Includes and Excludes
 
 Review the table below before designing your integration. Building against data types that are not included will result in empty fields or missing endpoints.
@@ -51,16 +55,16 @@ The API is a REST-style JSON feed served over HTTPS from `https://fade.sportshac
 ## Where to Go Next
 
 <CardGroup cols={2}>
-  <Card title="Request API Access" icon="key" href="api-guide/access">
+  <Card title="Request API Access" icon="key" href="/api-guide/access">
     Learn the three-step concierge onboarding process — contact, license, and key delivery.
   </Card>
-  <Card title="Authentication" icon="lock" href="api-guide/authentication">
+  <Card title="Authentication" icon="lock" href="/api-guide/authentication">
     Pass your Bearer token correctly and handle 401 and 429 error responses.
   </Card>
-  <Card title="Pagination" icon="arrow-right" href="api-guide/pagination">
+  <Card title="Pagination" icon="arrow-right" href="/api-guide/pagination">
     Traverse large result sets with opaque cursors and control page size with the limit param.
   </Card>
-  <Card title="API Quickstart" icon="bolt" href="guides/quickstart-api">
+  <Card title="API Quickstart" icon="bolt" href="/guides/quickstart-api">
     Make your first authenticated request and read a forecast object in under five minutes.
   </Card>
 </CardGroup>

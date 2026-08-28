@@ -1,6 +1,6 @@
 ---
 title: "GET /manifest — API Version, Families, and State"
-sidebarTitle: "GET /manifest"
+sidebarTitle: "Manifest"
 description: "Retrieve live API version, available prediction families, model versions, data freshness timestamps, and field licensing classifications for your key."
 ---
 
@@ -14,7 +14,7 @@ The `/manifest` endpoint returns a snapshot of the live production state Sportsh
 
 ```bash
 curl -s https://fade.sportshack.ai/api/v1/manifest \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 ## Response Fields

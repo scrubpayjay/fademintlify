@@ -1,6 +1,6 @@
 ---
 title: "GET /forecasts — List Issued Forecast Probabilities"
-sidebarTitle: "GET /forecasts"
+sidebarTitle: "Forecasts"
 description: "Page through all current non-superseded Sportshack forecast probabilities, ordered newest-first, with optional filters for sport, family, and game date."
 ---
 
@@ -115,14 +115,14 @@ The `/forecasts` endpoint returns the full set of current, non-superseded foreca
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/forecasts?family=nfl_spreads&limit=25" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Filter by family and game date:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/forecasts?family=nfl_spreads&date=2025-09-14" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 ## Sample Response

@@ -1,6 +1,6 @@
 ---
 title: "GET /markets — Market Identifiers and Classification"
-sidebarTitle: "GET /markets"
+sidebarTitle: "Markets"
 description: "List markets with Sportshack UUIDs, sport and family classification, contract rules hash, and official venue URL — no prices or lifecycle state included."
 ---
 
@@ -78,19 +78,52 @@ The `/markets` endpoint returns the universe of markets Sportshack has classifie
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/markets" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Filter by sport and family:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/markets?sport=nfl&family=nfl_spreads&limit=100" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
 ```
 
 **Paginate through results:**
 
 ```bash
 curl -s "https://fade.sportshack.ai/api/v1/markets?cursor=eyJpZCI6IjEyMyJ9" \
-  -H "Authorization: Bearer fade_live_YOUR_KEY_HERE"
+  -H "Authorization: Bearer $FADE_API_KEY"
+```
+
+## Sample Response
+
+```json
+{
+  "api_version": "1",
+  "data": [
+    {
+      "market_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "venue": "kalshi",
+      "venue_market_id": "SUPERBOWL-LIX-SPREAD-3.5",
+      "event_ticker": "SUPERBOWL-LIX",
+      "sport": "nfl",
+      "family": "nfl_spreads",
+      "series": "NFL Championship Spreads",
+      "contract_rules_hash": "9f86d081884c7d659a2feaa0c55ad015",
+      "official_venue_url": "https://kalshi.com/markets/SUPERBOWL-LIX-SPREAD-3.5"
+    },
+    {
+      "market_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "venue": "kalshi",
+      "venue_market_id": "SUPERBOWL-LIX-TOTAL-48.5",
+      "event_ticker": "SUPERBOWL-LIX",
+      "sport": "nfl",
+      "family": "nfl_totals",
+      "series": "NFL Championship Totals",
+      "contract_rules_hash": null,
+      "official_venue_url": null
+    }
+  ],
+  "next_cursor": "eyJpZCI6ImIyYzNkNGU1In0"
+}
 ```

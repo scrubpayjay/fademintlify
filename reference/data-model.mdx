@@ -123,7 +123,7 @@ A **Forecast** is the core output of the Fade Reality Engine. It expresses the m
 </ResponseField>
 
 <ResponseField name="snapshot_id" type="string | null">
-  A provenance reference linking this forecast to the data snapshot from which it was derived. This is a **read-only provenance field** — it is not a stable foreign key for querying. Returns `null` when no snapshot linkage is recorded.
+  A read-only provenance reference linking this forecast to the data snapshot from which it was derived. Provided for auditability. Returns `null` when no snapshot linkage is recorded.
 </ResponseField>
 
 <ResponseField name="venue" type="string | null">
@@ -139,7 +139,7 @@ A **Forecast** is the core output of the Fade Reality Engine. It expresses the m
 </ResponseField>
 
 <ResponseField name="created_at" type="datetime | null">
-  The timestamp at which this forecast record was written to the Fade database. Distinct from `issued_at` — a forecast may be ingested into the database after its original issuance time. Returns `null` in rare cases where the write timestamp was not captured.
+  The timestamp at which this forecast record was written to the Fade system. Distinct from `issued_at` — a forecast may be ingested after its original issuance time. Returns `null` in rare cases where the write timestamp was not captured.
 </ResponseField>
 
 ### ContractEvidence (Forecast Detail Only)
@@ -191,7 +191,7 @@ A **Grade** records the resolution outcome for a forecast once the underlying ev
 </ResponseField>
 
 <ResponseField name="outcome" type="integer | null">
-  The binary resolution result: `1` if the proposition resolved **Yes**, `0` if it resolved **No`. Returns `null` when `grading_status` is not `"graded"`.
+  The binary resolution result: `1` if the proposition resolved **Yes**, `0` if it resolved **No**. Returns `null` when `grading_status` is not `"graded"`.
 </ResponseField>
 
 <ResponseField name="grading_status" type="string" required>
